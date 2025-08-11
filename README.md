@@ -61,6 +61,8 @@ Docker Build
 2. Laravel 8.83.8
 3. MySQL 15.1
 4. nginx 1.21.1
+5. Laravel Fortify（会員登録・ログイン・パスワードリセット機能）
+6. FormRequest（ログイン・会員登録・勤怠入力などのバリデーション）
 # ルートファイル構成
 本プロジェクトでは、ルート定義を用途別に分けています。
 ・ routes/web.php
