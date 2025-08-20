@@ -22,8 +22,8 @@ Docker Build
   MAIL_USERNAME=null
   MAIL_PASSWORD=null
   MAIL_ENCRYPTION=null
-  MAIL_FROM_ADDRESS=test@example.com
-  MAIL_FROM_NAME="coachtechフリマ"
+  MAIL_FROM_ADDRESS="no-reply@example.test"
+  MAIL_FROM_NAME="coachtech 勤怠管理アプリ"
 10. シンボリックリンクの作成 php artisan storage:link
 11. "○○の保存に失敗しました。十分な権限がありません。[管理者権限で再試行] を選択して管理者として再試行してください。"エラーが発生した場合、ディレクトリに権限を設定 chmod -R 777 *
 12. テスト用DBの作成
