@@ -1,0 +1,167 @@
+:root {
+    --text: #333;
+    /* 基本文字色を黒系に */
+    --bg: #f6f6f6;
+    /* 背景は薄いグレー */
+    --card: #ffffff;
+    --border: #ddd;
+    /* 枠線もグレー */
+    --accent: #000;
+    /* ボタン・リンクの黒 */
+    --error: #c0392b;
+    --muted: #666;
+    /* ラベルや補助文字はグレー */
+    --radius: 16px;
+    --shadow: 0 10px 24px rgba(0, 0, 0, .06);
+}
+
+.theme-admin {
+    --text: #333;
+    --muted: #666;
+    --accent: #000;
+    /* ← 黒 */
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 680px;
+    /* フォーム幅は常にこれ */
+    margin: 40px auto;
+    padding: 0 16px;
+    /* ← 横余白を入れて、狭い画面でも崩れない */
+    color: var(--text);
+}
+
+.site-header__inner {
+    max-width: 1540px;
+    /* PC条件 */
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+}
+
+.auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px 24px;
+}
+
+.auth-title {
+    margin: 0 0 16px;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* ラベルは上、入力は横幅いっぱい */
+.auth-form {
+    display: grid;
+    gap: 16px;
+}
+
+.auth-label {
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.input,
+.select,
+.btn,
+.checkbox-wrap {
+    width: 100%;
+}
+
+.input,
+.select {
+    height: 60px;
+    /* 指定 */
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 16px;
+    background: #fff;
+    outline: none;
+}
+
+.input:focus,
+.select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(139, 121, 105, .12);
+}
+
+.checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.btn {
+    height: 60px;
+    /* 指定 */
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    filter: brightness(.95);
+}
+
+.link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.alert {
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 8px 0 4px;
+    border: 1px solid var(--border);
+    background: #fff;
+}
+
+.alert-info {
+    border-color: #d5e8ff;
+    background: #f0f7ff;
+}
+
+.alert-error {
+    border-color: #ffd7d7;
+    background: #fff2f2;
+}
+
+.error-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.help.error {
+    color: var(--error);
+    margin-top: 6px;
+    font-size: 13px;
+}

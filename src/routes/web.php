@@ -1,18 +1,52 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Attendances\AttendanceController;
+use App\Http\Controllers\Admin\Auth\LoginController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+/**
+ * 未ログイン（一般ユーザー）専用：画面だけ
+ * Fortify/Breeze 等の POST は既定ルートを利用
+ */
+Route::middleware('guest:web')->group(function () {
+    Route::view('/login', 'auth.login')->name('login');          // GET /login
+    Route::view('/register', 'auth.register')->name('register'); // GET /register
+});
 
-Route::get('/', function () {
-    return view('welcome');
+/** メール認証案内（ログインは必要・verified は不要） */
+Route::get('/email/verify', fn() => view('auth.verify-email'))
+    ->middleware('auth')
+    ->name('verification.notice');
+
+/** 任意：ダッシュボード（ログイン＋認証済み） */
+Route::get('/dashboard', fn() => view('dashboard'))
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+/** 勤怠（ログイン＋認証済み） */
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+
+    Route::post('/attendance/in',            [AttendanceController::class, 'punchIn'])->name('attendance.punch.in');
+    Route::post('/attendance/break/start',   [AttendanceController::class, 'breakStart'])->name('attendance.break.start');
+    Route::post('/attendance/break/end',     [AttendanceController::class, 'breakEnd'])->name('attendance.break.end');
+    Route::post('/attendance/out',           [AttendanceController::class, 'punchOut'])->name('attendance.punch.out');
+
+    Route::get('/attendance/list',           [AttendanceController::class, 'list'])->name('attendance.list');
+    Route::get('/attendance/detail/{id}',    [AttendanceController::class, 'detail'])->name('attendance.detail');
+});
+
+/** トップは勤怠へ（未ログインなら /login へ誘導される） */
+Route::redirect('/', '/attendance');
+
+/** 管理者 */
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('guest:admin')->group(function () {
+        Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login.form');
+        Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:6,1')->name('login');
+    });
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+        Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    });
 });

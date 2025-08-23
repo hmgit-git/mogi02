@@ -3,19 +3,20 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
+use Illuminate\Http\Request;
 
 class Authenticate extends Middleware
 {
-    /**
-     * Get the path the user should be redirected to when they are not authenticated.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return string|null
-     */
-    protected function redirectTo($request)
+    protected function redirectTo($request): ?string
     {
-        if (! $request->expectsJson()) {
+        if (!$request->expectsJson()) {
+            // 管理者ルートなら /admin/login へ
+            if ($request->is('admin') || $request->is('admin/*')) {
+                return route('admin.login.form');
+            }
+            // それ以外は通常ログインへ（Fortify等）
             return route('login');
         }
+        return null;
     }
 }

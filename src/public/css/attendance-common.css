@@ -1,0 +1,150 @@
+/* =========================
+   Attendance (ログイン後画面) 共通
+   ========================= */
+
+/* --- Hero（状態・日付・時計） --- */
+.att-hero {
+    display: grid;
+    gap: 14px;
+    text-align: center;
+}
+
+.state-badge {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 9999px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    margin: 0 auto 4px;
+    border: 1px solid var(--border, #e5e7eb);
+    /* フォールバック付き */
+}
+
+/* 状態ごとのモノトーン */
+.state-off {
+    background: #f2f2f2;
+    color: #333;
+}
+
+.state-working {
+    background: #000;
+    color: #fff;
+}
+
+.state-break {
+    background: #666;
+    color: #fff;
+}
+
+.state-finished {
+    background: #9e9e9e;
+    color: #fff;
+}
+
+.att-date {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.att-time {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* 出勤など単独ボタンの幅・高さ */
+.att-actions .btn {
+    width: 100%;
+    height: 60px;
+    /* 要件：高さ60px */
+}
+
+/* --- 横並びボタン（退勤＋休憩） --- */
+.btn-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+.btn-row>form {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+.btn-row>form .btn {
+    width: 100%;
+    height: 60px;
+}
+
+/* 白（セカンダリ）ボタン */
+.btn-secondary {
+    background: #fff;
+    color: #000;
+    border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+    background: #f7f7f7;
+}
+
+/* --- 一覧/詳細のテーブル共通 --- */
+.att-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.att-table th,
+.att-table td {
+    border: 1px solid var(--border, #e5e7eb);
+    /* フォールバック付き */
+    padding: 10px 12px;
+    vertical-align: top;
+}
+
+.att-table th {
+    text-align: left;
+    background: #f7f7f7;
+    font-weight: 600;
+    white-space: nowrap;
+    width: 180px;
+    /* 詳細テーブルで効く。一覧では余白として機能 */
+}
+
+/* --- 月フィルター行（一覧） --- */
+.att-filter {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 12px 0 16px;
+}
+
+.att-filter .input {
+    width: auto;
+    min-width: 220px;
+}
+
+/* --- サマリー（一覧） --- */
+.att-summary {
+    margin-top: 12px;
+}
+
+/* --- フラッシュ（任意） --- */
+.alert {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+.alert-info {
+    background: #eef4ff;
+    border: 1px solid #cdd9ff;
+    color: #123;
+}
+
+.alert-error {
+    background: #ffecec;
+    border: 1px solid #f5c2c7;
+    color: #b94a48;
+}

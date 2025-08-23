@@ -1,0 +1,82 @@
+:root {
+    --header-h: 80px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+}
+
+.site-header {
+    height: var(--header-h);
+    background: #000;
+    color: #fff;
+}
+
+.site-header__inner {
+    height: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+}
+
+.site-header__logo {
+    display: block;
+    height: 44px;
+    /* お好みで微調整 */
+    width: auto;
+}
+
+.site-main {
+    min-height: calc(100dvh - var(--header-h));
+    padding: 24px 16px 40px;
+}
+
+.site-footer {
+    text-align: center;
+    color: #8b7969;
+    font-size: 14px;
+    padding: 12px 0 24px;
+}
+.site-header__nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btn {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .25);
+    color: #fff;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+.nav-logout {
+    margin-left: 8px;
+}
+
+/* ボタンの高さをヘッダーに馴染ませたい場合は小さめに */
+.site-header .btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 10px;
+}
