@@ -1,0 +1,4 @@
+/vendor/
+/docker/mysql/data/
+/docker/mysql/logs/
+/docker/mysql/tmp/
