@@ -29,7 +29,7 @@
                 <a href="{{ route('attendance.index') }}" class="nav-btn">勤怠</a>
                 <a href="{{ route('attendance.list') }}" class="nav-btn">勤怠一覧</a>
                 <a href="#" class="nav-btn" onclick="event.preventDefault(); alert('申請ページは準備中です');">申請</a>
-                <form method="POST" action="{{ route('logout') }}" class="nav-logout">
+                <form method="POST" action="{{ route('logout') }}" class="nav-logout" novalidate>
                     @csrf
                     <button type="submit" class="btn btn-primary">ログアウト</button>
                 </form>

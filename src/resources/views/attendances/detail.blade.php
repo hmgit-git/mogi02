@@ -1,83 +1,145 @@
 @extends('layouts.app')
 @section('title','勤怠詳細')
+@section('body_class','theme-user')
 
 @section('css')
-{{-- 共通のカード/ボタン/配色 --}}
-<link rel="stylesheet" href="{{ asset('css/auth-common.css') }}">
-{{-- 勤怠ページ専用（バッジ・テーブル等） --}}
 <link rel="stylesheet" href="{{ asset('css/attendance-common.css') }}">
 @endsection
 
 @section('content')
 @php
 use Illuminate\Support\Carbon;
-$dDate = Carbon::parse($display['date']);
-$youbi = ['日','月','火','水','木','金','土'][$dDate->dayOfWeek];
+
+// Controller からの想定値: $att, $dateLabel, $breakMinutes, $workedMinutes, $monthParam, $breaks
+$userName = auth()->user()->name ?? '';
+$dateYmd = isset($att->work_date) ? Carbon::parse($att->work_date,'Asia/Tokyo')->toDateString()
+: (request()->route('date') ?? now('Asia/Tokyo')->toDateString());
+
+// 既存休憩（なければ空）
+$breaks = isset($breaks) ? $breaks : ($att ? $att->breaks->sortBy('start_at') : collect());
+$extraIndex = $breaks->count(); // 追加用の空行
 @endphp
 
-<div class="auth-container">
-    <div class="auth-card">
-        <h1 class="auth-title">勤怠詳細</h1>
+<div class="att-wrap">
+    <h1 class="section-title">勤怠詳細</h1>
 
-        @if (session('status'))
-        <div class="alert alert-info">{{ session('status') }}</div>
-        @endif
-        @if ($errors->any())
-        <div class="alert alert-error">
-            <ul class="error-list">
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
+    @if (session('status'))
+    <div class="alert alert-info">{{ session('status') }}</div>
+    @endif
+    @if ($errors->any())
+    <div class="alert alert-error">
+        <ul class="error-list">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <form method="POST" action="{{ route('attendance.request') }}" class="att-edit-form" novalidate>
+        @csrf
+        <input type="hidden" name="date" value="{{ $dateYmd }}">
 
         <table class="att-table">
             <tbody>
+                {{-- 名前 --}}
+                <tr>
+                    <th>名前</th>
+                    <td>{{ $userName }}</td>
+                </tr>
+
+                {{-- 日付（3列： (a)年 / (b)空欄 / (c)月日 ）--}}
+                @php
+                $dateObj = \Illuminate\Support\Carbon::parse($dateYmd, 'Asia/Tokyo');
+                $yearStr = $dateObj->year . '年';
+                $mdStr = $dateObj->format('n月j日'); // 先頭ゼロなし
+                @endphp
                 <tr>
                     <th>日付</th>
-                    <td>{{ $dDate->format('Y年n月j日') }}({{ $youbi }})</td>
-                </tr>
-                <tr>
-                    <th>出勤</th>
-                    <td>{{ $display['clock_in'] ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>休憩開始</th>
-                    <td>{{ $display['break_start'] ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>休憩終了</th>
-                    <td>{{ $display['break_end'] ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>退勤</th>
-                    <td>{{ $display['clock_out'] ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>実働</th>
                     <td>
-                        @if (($display['work_min'] ?? 0) > 0)
-                        {{ intdiv($display['work_min'],60) }}時間{{ $display['work_min'] % 60 }}分
-                        @else
-                        -
-                        @endif
+                        <div class="triple">
+                            {{-- (a) 年：開始側の列（編集不可の静的ボックス） --}}
+                            <div class="input input-static" aria-label="年">{{ $yearStr }}</div>
+
+                            {{-- (b) セパレータ列は空欄（要件どおり） --}}
+                            <span class="triple-sep"></span>
+
+                            {{-- (c) 月日：終了側の列（編集不可の静的ボックス） --}}
+                            <div class="input input-static" aria-label="月日">{{ $mdStr }}</div>
+                        </div>
                     </td>
                 </tr>
+
+
+                {{-- 出勤・退勤（3列： (a)入力 (b)〜 (c)入力 ）--}}
+                <tr>
+                    <th>出勤・退勤</th>
+                    <td>
+                        <div class="triple">
+                            <input class="input" type="time" name="clock_in" value="{{ old('clock_in',  $att?->clock_in_at?->format('H:i')) }}">
+                            <span class="triple-sep">〜</span>
+                            <input class="input" type="time" name="clock_out" value="{{ old('clock_out', $att?->clock_out_at?->format('H:i')) }}">
+                        </div>
+                    </td>
+                </tr>
+
+                {{-- 休憩（既存分） --}}
+                @foreach ($breaks as $i => $br)
+                @php
+                $startVal = old("breaks.$i.start", $br->start_at?->format('H:i'));
+                $endVal = old("breaks.$i.end", $br->end_at?->format('H:i'));
+                @endphp
+                <tr>
+                    <th>{{ $i === 0 ? '休憩' : "休憩".($i+1) }}</th>
+                    <td>
+                        <div class="triple">
+                            <input class="input" type="time" name="breaks[{{ $i }}][start]" value="{{ $startVal }}">
+                            <span class="triple-sep">〜</span>
+                            <input class="input" type="time" name="breaks[{{ $i }}][end]" value="{{ $endVal }}">
+                        </div>
+                        @error("breaks.$i.start")<div class="field-error">{{ $message }}</div>@enderror
+                        @error("breaks.$i.end") <div class="field-error">{{ $message }}</div>@enderror
+                    </td>
+                </tr>
+                @endforeach
+
+                {{-- 休憩 追加用の空欄（1行） --}}
+                <tr>
+                    <th>{{ $breaks->isEmpty() ? '休憩' : '休憩'.($extraIndex+1) }}</th>
+                    <td>
+                        <div class="triple">
+                            <input class="input" type="time" name="breaks[{{ $extraIndex }}][start]" value="{{ old("breaks.$extraIndex.start") }}">
+                            <span class="triple-sep">〜</span>
+                            <input class="input" type="time" name="breaks[{{ $extraIndex }}][end]" value="{{ old("breaks.$extraIndex.end") }}">
+                        </div>
+                        @error("breaks.$extraIndex.start")<div class="field-error">{{ $message }}</div>@enderror
+                        @error("breaks.$extraIndex.end") <div class="field-error">{{ $message }}</div>@enderror
+                    </td>
+                </tr>
+
+                {{-- 備考（必須） --}}
                 <tr>
                     <th>備考</th>
-                    <td>{{ $att->note ?? '' }}</td>
-                </tr>
-                <tr>
-                    <th>状態</th>
-                    <td>{{ $att->status ?? '' }}</td>
+                    <td>
+                        <textarea class="input" name="note" rows="3" placeholder="修正理由・背景などを記入してください" required>{{ old('note') }}</textarea>
+                        @error('note')<div class="field-error">{{ $message }}</div>@enderror
+                    </td>
                 </tr>
             </tbody>
         </table>
 
-        <div class="att-actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
-            <a class="link" href="{{ route('attendance.list', ['month' => \Illuminate\Support\Str::of($display['date'])->substr(0,7)]) }}">← 一覧に戻る</a>
+        {{-- 右下：修正ボタン（黒） --}}
+        <div style="display:flex; gap:12px; margin-top:12px;">
+            <button type="submit" class="btn btn-primary" style="margin-left:auto;">修正</button>
         </div>
-    </div>
+    </form>
+
+    {{-- 参考：下に現状値のサマリを残すなら（任意）
+<div class="att-summary" style="max-width:760px;">
+  実働：
+  @php $wm = $workedMinutes ?? 0; @endphp
+  @if ($wm>0) {{ intdiv($wm,60) }}時間{{ $wm%60 }}分 @else - @endif
+</div>
+--}}
 </div>
 @endsection

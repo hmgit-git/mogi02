@@ -2,6 +2,19 @@
    Attendance (ログイン後画面) 共通
    ========================= */
 
+/* ===== 共通ラッパ：勤怠画面は幅900pxに統一 ===== */
+.att-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px;
+}
+
+/* 「auth-card」が幅を絞っている場合に上書き（ログイン後だけ適用） */
+.theme-user .auth-card {
+    width: 100%;
+    max-width: 100%;
+}
+
 /* --- Hero（状態・日付・時計） --- */
 .att-hero {
     display: grid;
@@ -125,11 +138,6 @@
     min-width: 220px;
 }
 
-/* --- サマリー（一覧） --- */
-.att-summary {
-    margin-top: 12px;
-}
-
 /* --- フラッシュ（任意） --- */
 .alert {
     padding: 10px 12px;
@@ -147,4 +155,190 @@
     background: #ffecec;
     border: 1px solid #f5c2c7;
     color: #b94a48;
+}
+
+/* タイトル：左に黒い縦棒 */
+.section-title {
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 6px solid #000;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 40px;
+}
+
+/* 月ナビ（← 前月 | カレンダー+年月 | 翌月 →） */
+.month-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 12px 0 16px;
+}
+
+/* ボタン（モノトーン・アウトライン） */
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #000;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.btn-outline:hover {
+    background: #f7f7f7;
+}
+
+/* カレンダートリガー内のアイコン */
+.month-trigger svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+/* ネイティブのmonth入力は視覚的に隠す（スクリーンリーダーは可） */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* 1枠の月ナビ（左右端に前/翌、中央に年月） */
+.month-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+    margin: 12px 0 16px;
+}
+
+.month-link {
+    text-decoration: none;
+    color: #000;
+    font-weight: 600;
+    padding: 8px 0;
+}
+
+.month-link:hover {
+    text-decoration: underline;
+}
+
+.month-bar .prev {
+    justify-self: start;
+}
+
+.month-bar .next {
+    justify-self: end;
+}
+
+.month-center {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    margin: 0 auto;
+    line-height: 1;
+}
+
+.month-center svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+/* アクセシビリティ対応の視覚的非表示 */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.detail-btn {
+    display: inline-block;
+    background: transparent;
+    border: none;
+    color: #000;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1;
+    padding: 6px 2px;
+    /* クリックしやすさだけ少し */
+    cursor: pointer;
+}
+
+.detail-btn:hover {
+    text-decoration: underline;
+}
+
+.detail-btn.is-disabled {
+    opacity: .4;
+    pointer-events: none;
+}
+
+.triple {
+    display: grid;
+    grid-template-columns: 1fr 24px 1fr;
+    align-items: center;
+    gap: 10px;
+    max-width: 420px;
+}
+
+.triple-sep {
+    display: block;
+}
+
+.input {
+    width: 100%;
+    height: 40px;
+    padding: 8px 10px;
+    border: 1px solid var(--border, #ddd);
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+}
+
+.field-error {
+    color: #c0392b;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* 入力風“静的”ボックス：編集不可＆フォーカス不可 */
+.input-static {
+    background: #fff;
+    pointer-events: none;
+    cursor: default;
+    border: none;
+}
+
+.input-static:focus {
+    outline: none;
 }

@@ -34,6 +34,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/attendance/list',           [AttendanceController::class, 'list'])->name('attendance.list');
     Route::get('/attendance/detail/{id}',    [AttendanceController::class, 'detail'])->name('attendance.detail');
+    Route::get(
+        '/attendance/detail/date/{date}',
+        [\App\Http\Controllers\Attendances\AttendanceController::class, 'detailByDate']
+    )->where('date', '\d{4}-\d{2}-\d{2}')
+        ->name('attendance.detail.date');
+    // 修正申請の送信
+    Route::post('/attendance/detail/request', [\App\Http\Controllers\Attendances\AttendanceController::class, 'requestUpdate'])
+        ->name('attendance.request');
 });
 
 /** トップは勤怠へ（未ログインなら /login へ誘導される） */

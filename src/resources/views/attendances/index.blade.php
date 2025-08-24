@@ -30,7 +30,7 @@ default => 'state-off',
 };
 @endphp
 
-<div class="auth-container">
+<div class="att-wrap">
     <div class="auth-card att-hero">
 
         {{-- 状態バッジ --}}
@@ -40,7 +40,7 @@ default => 'state-off',
         <div class="att-date">{{ $date->format('Y年n月j日') }}({{ $youbi }})</div>
 
         {{-- 現時間 --}}
-        <div class="att-time"><span id="nowTime">--:--:--</span></div>
+        <div class="att-time"><span id="nowTime">--:--</span></div>
 
         {{-- フラッシュメッセージ（任意） --}}
         @if (session('status'))
@@ -53,7 +53,7 @@ default => 'state-off',
         {{-- アクション：状態で切り替え --}}
         @if ($state === 'not_started')
         {{-- 出勤前：出勤ボタンのみ --}}
-        <form method="POST" action="{{ route('attendance.punch.in') }}" class="att-actions">
+        <form method="POST" action="{{ route('attendance.punch.in') }}" class="att-actions" novalidate>
             @csrf
             <button class="btn btn-primary" type="submit">出勤</button>
         </form>
@@ -70,15 +70,12 @@ default => 'state-off',
         </div>
 
         @elseif ($state === 'on_break')
-        {{-- 休憩中：退勤(黒) + 休憩戻(白) --}}
-        <div class="btn-row">
-            <form method="POST" action="{{ route('attendance.punch.out') }}" class="att-actions">@csrf
-                <button class="btn btn-primary" type="submit">退勤</button>
-            </form>
-            <form method="POST" action="{{ route('attendance.break.end') }}" class="att-actions">@csrf
-                <button class="btn btn-secondary" type="submit">休憩戻</button>
-            </form>
-        </div>
+        {{-- 休憩中：休憩戻(白) のみ --}}
+        <form method="POST" action="{{ route('attendance.break.end') }}" class="att-actions">
+            @csrf
+            <button class="btn btn-secondary" type="submit">休憩戻</button>
+        </form>
+
 
         @elseif ($state === 'finished')
         {{-- 退勤済み：ボタン無し --}}
@@ -88,34 +85,37 @@ default => 'state-off',
     </div>
 </div>
 
-{{-- 時計＆二重送信防止 --}}
 <script>
     (function() {
-        // 時計
         const el = document.getElementById('nowTime');
+        const tz = 'Asia/Tokyo';
 
         function pad(n) {
-            return n.toString().padStart(2, '0')
+            return n.toString().padStart(2, '0');
         }
 
-        function tick() {
+        function render() {
             const now = new Date(new Date().toLocaleString('ja-JP', {
-                timeZone: 'Asia/Tokyo'
+                timeZone: tz
             }));
-            el.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            el.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
         }
-        tick();
-        setInterval(tick, 1000);
 
-        // 送信時にボタン無効化（連打防止）
-        document.querySelectorAll('.att-actions').forEach(f => {
-            f.addEventListener('submit', () => {
-                const b = f.querySelector('button');
-                if (b) {
-                    b.disabled = true;
-                }
-            });
-        });
+        // 次の“分”までのミリ秒を計算して、以降は1分ごとに更新
+        function schedule() {
+            const now = new Date(new Date().toLocaleString('ja-JP', {
+                timeZone: tz
+            }));
+            const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+            setTimeout(() => {
+                render();
+                setInterval(render, 60000); // 以降は毎分更新
+            }, ms);
+        }
+
+        render();
+        schedule();
     })();
 </script>
+
 @endsection

@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use App\Http\Requests\StoreAttendanceEditRequest;
+use App\Models\AttendanceEditRequest as EditReq;
+use Illuminate\Support\Facades\Schema;
+
 
 class AttendanceController extends Controller
 {
@@ -89,7 +93,7 @@ class AttendanceController extends Controller
             return back()->with('auth_error', '出勤の記録に失敗しました。もう一度お試しください。');
         }
 
-        return back()->with('status', '出勤しました。いってらっしゃい！');
+        return back()->with('status');
     }
 
     /**
@@ -205,5 +209,211 @@ class AttendanceController extends Controller
         }
 
         return back()->with('status', 'おつかれさまでした！');
+    }
+
+    /**
+     * 月次一覧
+     */
+    public function list(Request $request)
+    {
+        $user = Auth::user();
+
+        // month=YYYY-MM（未指定なら今月）
+        $monthStr = $request->query('month');
+        if (!$monthStr || !preg_match('/^\d{4}-\d{2}$/', $monthStr)) {
+            $monthStr = Carbon::now('Asia/Tokyo')->format('Y-m');
+        }
+
+        $month  = Carbon::createFromFormat('Y-m', $monthStr, 'Asia/Tokyo')->startOfMonth();
+        $start  = $month->copy()->startOfMonth();
+        $end    = $month->copy()->endOfMonth();
+        $today0 = Carbon::now('Asia/Tokyo')->startOfDay();
+
+        // その月の勤怠＋休憩をまとめて取得
+        $atts = Attendance::where('user_id', $user->id)
+            ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
+            ->with('breaks')
+            ->get()
+            ->keyBy(fn($a) => $a->work_date->toDateString());
+
+        $days = [];
+        $totalWorked = 0;
+
+        for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+            $key   = $d->toDateString();
+            $att   = $atts->get($key);
+
+            // 表示を MM/DD(曜) に
+            $youbiMap = ['日', '月', '火', '水', '木', '金', '土'];
+            $label    = $d->format('m/d') . '(' . $youbiMap[$d->dayOfWeek] . ')';
+
+            $clockIn  = $att?->clock_in_at;
+            $clockOut = $att?->clock_out_at;
+
+            if ($att) {
+                // 退勤していなければ、当日なら「今」、過去日なら「その日の終わり」までで集計
+                $asOf = $clockOut ?: ($d->lt($today0) ? $d->copy()->endOfDay() : Carbon::now('Asia/Tokyo'));
+
+                $breakMin = $att->breaks->sum(function ($br) use ($asOf) {
+                    if (!$br->start_at) return 0;
+                    $end = $br->end_at ?: $asOf;
+                    return $br->start_at->diffInMinutes($end);
+                });
+
+                $worked = $clockIn ? max(0, $clockIn->diffInMinutes($asOf) - $breakMin) : 0;
+                $totalWorked += $worked;
+            } else {
+                $breakMin = 0;
+                $worked   = 0;
+            }
+
+            $days[] = [
+                'date'       => $key,
+                'label'      => $label, // ← ここが MM/DD(曜)
+                'att_id'     => $att->id ?? null,
+                'clock_in'   => $clockIn  ? $clockIn->format('H:i')  : '-',
+                'clock_out'  => $clockOut ? $clockOut->format('H:i') : '-',
+                'break_min'  => $breakMin,
+                'work_min'   => $worked,
+                'status'     => $att->status ?? '',
+            ];
+        }
+
+        $prevMonth  = $start->copy()->subMonth()->format('Y-m');
+        $nextMonth  = $start->copy()->addMonth()->format('Y-m');
+        $monthLabel = $start->format('Y/m');
+
+        return view('attendances.list', [
+            'month'            => $start->format('Y-m'),
+            'days'             => $days,
+            'totalWorkMinutes' => $totalWorked,
+            'prevMonth'        => $prevMonth,
+            'nextMonth'        => $nextMonth,
+            'monthLabel'       => $monthLabel,
+        ]);
+    }
+
+    /**
+     * 詳細（ID指定）
+     */
+    public function detail($id)
+    {
+        $user = Auth::user();
+
+        $att = Attendance::with('breaks')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $date  = Carbon::parse($att->work_date, 'Asia/Tokyo');
+        $youbi = ['日', '月', '火', '水', '木', '金', '土'][$date->dayOfWeek];
+
+        $asOf = $att->clock_out_at
+            ?: ($date->isPast() ? $date->copy()->endOfDay() : Carbon::now('Asia/Tokyo'));
+
+        $breakMinutes = $att->breaks->sum(function ($br) use ($asOf) {
+            if (!$br->start_at) return 0;
+            $end = $br->end_at ?: $asOf;
+            return $br->start_at->diffInMinutes($end);
+        });
+
+        $workedMinutes = $att->clock_in_at
+            ? max(0, $att->clock_in_at->diffInMinutes($asOf) - $breakMinutes)
+            : 0;
+
+        return view('attendances.detail', [
+            'att'            => $att,
+            'dateLabel'      => $date->format('Y年n月j日') . "($youbi)",
+            'breakMinutes'   => $breakMinutes,
+            'workedMinutes'  => $workedMinutes,
+            'monthParam'     => $date->format('Y-m'),
+        ]);
+    }
+
+    /**
+     * 詳細（日付指定：レコードが無くても開ける）
+     */
+    public function detailByDate(string $date)
+    {
+        $user = Auth::user();
+        $d    = Carbon::createFromFormat('Y-m-d', $date, 'Asia/Tokyo')->startOfDay();
+
+        $att = Attendance::with('breaks')
+            ->where('user_id', $user->id)
+            ->whereDate('work_date', $d->toDateString())
+            ->first(); // 無い日もOK
+
+        $youbi = ['日', '月', '火', '水', '木', '金', '土'][$d->dayOfWeek];
+
+        $asOf = $att?->clock_out_at
+            ?: ($d->isPast() ? $d->copy()->endOfDay() : Carbon::now('Asia/Tokyo'));
+
+        $breakMinutes = $att
+            ? $att->breaks->sum(function ($br) use ($asOf) {
+                if (!$br->start_at) return 0;
+                $end = $br->end_at ?: $asOf;
+                return $br->start_at->diffInMinutes($end);
+            })
+            : 0;
+
+        $workedMinutes = ($att && $att->clock_in_at)
+            ? max(0, $att->clock_in_at->diffInMinutes($asOf) - $breakMinutes)
+            : 0;
+
+        return view('attendances.detail', [
+            'att'            => $att,
+            'dateLabel'      => $d->format('Y年n月j日') . "($youbi)",
+            'breakMinutes'   => $breakMinutes,
+            'workedMinutes'  => $workedMinutes,
+            'monthParam'     => $d->format('Y-m'),
+            'breaks'         => $att ? $att->breaks->sortBy('start_at') : collect(),
+        ]);
+    }
+    public function requestUpdate(StoreAttendanceEditRequest $request)
+    {
+        $user = Auth::user();
+        $date = $request->input('date');
+        $cin  = $request->input('clock_in'); // "HH:MM" or null
+        $cout = $request->input('clock_out');
+        $note = $request->input('note');
+
+        $d    = Carbon::createFromFormat('Y-m-d', $date, 'Asia/Tokyo');
+        $cinAt  = $cin  ? Carbon::createFromFormat('Y-m-d H:i', "{$date} {$cin}",  'Asia/Tokyo') : null;
+        $coutAt = $cout ? Carbon::createFromFormat('Y-m-d H:i', "{$date} {$cout}", 'Asia/Tokyo') : null;
+
+        // 対象日の勤怠（無ければ作らない＝申請は「候補」を持つだけ）
+        $att = Attendance::where('user_id', $user->id)
+            ->whereDate('work_date', $date)
+            ->first();
+
+        // 申請レコード作成
+        $req = new EditReq();
+        $req->attendance_id     = $att?->id;
+        $req->user_id           = $user->id;
+        $req->req_clock_in_at   = $cinAt;
+        $req->req_clock_out_at  = $coutAt;
+        $req->reason            = $note;
+        $req->status            = 'pending';
+
+        // 休憩の申請をJSONで保存（カラムがある場合のみ）
+        if (Schema::hasColumn('attendance_edit_requests', 'requested_breaks')) {
+            $breaks = collect($request->input('breaks', []))
+                ->filter(fn($r) => ($r['start'] ?? null) || ($r['end'] ?? null))
+                ->map(function ($r) use ($date) {
+                    $s = $r['start'] ?? null;
+                    $e = $r['end']   ?? null;
+                    return [
+                        'start_at' => $s ? "{$date} {$s}:00" : null,
+                        'end_at'   => $e ? "{$date} {$e}:00" : null,
+                    ];
+                })->values()->all();
+            $req->requested_breaks = $breaks; // castsにarrayが必要
+        }
+
+        $req->save();
+
+        return redirect()
+            ->route('attendance.detail.date', ['date' => $date])
+            ->with('status', '修正申請を送信しました。');
     }
 }

@@ -15,7 +15,7 @@
             登録メールに認証リンクを送信しました。届いていない場合は、以下から再送できます。
         </p>
 
-        <form method="POST" action="{{ route('verification.send') }}" class="auth-form" style="margin-top:8px;">
+        <form method="POST" action="{{ route('verification.send') }}" class="auth-form" novalidate>
             @csrf
             <button class="btn btn-primary" type="submit">認証メールを再送</button>
         </form>

@@ -1,88 +1,106 @@
 @extends('layouts.app')
-@section('title','勤怠一覧')
-
 @section('css')
-{{-- 共通カード/ボタン --}}
-<link rel="stylesheet" href="{{ asset('css/auth-common.css') }}">
-{{-- 勤怠ページ専用（テーブル等） --}}
 <link rel="stylesheet" href="{{ asset('css/attendance-common.css') }}">
 @endsection
 
+@section('title','勤怠一覧')
+@section('body_class','theme-user')
+
 @section('content')
-@php
-use Illuminate\Support\Carbon;
-@endphp
+<div class="att-wrap">
 
-<div class="auth-container">
-    <div class="auth-card">
-        <h1 class="auth-title">勤怠一覧（{{ $month }}）</h1>
+    {{-- タイトル（左に黒バー） --}}
+    <h1 class="section-title">勤怠一覧</h1>
 
-        {{-- 月切り替え --}}
-        <form method="GET" action="{{ route('attendance.list') }}" class="att-filter">
-            <label class="auth-label" for="month">対象月</label>
-            <input id="month" class="input" type="month" name="month" value="{{ $month }}">
-            <button class="btn btn-primary" type="submit">表示</button>
-        </form>
+    {{-- 月ナビ：← 前月 | カレンダー+年月 | 翌月 → --}}
+    <form id="monthNav" method="GET" action="{{ route('attendance.list') }}" class="month-bar" role="search" novalidate>
+        <a class="month-link prev" href="{{ route('attendance.list', ['month' => $prevMonth]) }}" aria-label="前月">← 前月</a>
 
-        <table class="att-table att-table--list">
-            <thead>
-                <tr>
-                    <th>日付</th>
-                    <th>出勤</th>
-                    <th>休憩開始</th>
-                    <th>休憩終了</th>
-                    <th>退勤</th>
-                    <th>実働</th>
-                    <th>備考</th>
-                    <th>状態</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($days as $d)
-                @php
-                $dDate = Carbon::parse($d['date']);
-                $youbi = ['日','月','火','水','木','金','土'][$dDate->dayOfWeek];
-                $dateDisp = $dDate->format('Y年n月j日') . "($youbi)";
-                $attId = $rows[$d['date']]->id ?? null;
-                @endphp
-                <tr>
-                    <td>
-                        @if ($attId)
-                        <a class="link" href="{{ route('attendance.detail', ['id' => $attId]) }}">{{ $dateDisp }}</a>
-                        @else
-                        {{ $dateDisp }}
-                        @endif
-                    </td>
-                    <td>{{ $d['clock_in_at'] ?? '-' }}</td>
-                    <td>{{ $d['break_start'] ?? '-' }}</td>
-                    <td>{{ $d['break_end'] ?? '-' }}</td>
-                    <td>{{ $d['clock_out_at'] ?? '-' }}</td>
-                    <td>
-                        @if (($d['work_min'] ?? 0) > 0)
-                        {{ intdiv($d['work_min'],60) }}時間{{ $d['work_min'] % 60 }}分
-                        @else
-                        -
-                        @endif
-                    </td>
-                    <td>{{ $d['note'] ?? '' }}</td>
-                    <td>{{ $d['status'] ?? '' }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        {{-- ネイティブmonthは隠して、中央ボタンで開く --}}
+        <input type="month" name="month" id="monthPicker" value="{{ $month }}" class="visually-hidden" aria-label="対象月を選択">
 
-        <div class="att-summary">
-            月合計：
-            @php
-            $h = intdiv($totalWorkMinutes, 60);
-            $m = $totalWorkMinutes % 60;
-            @endphp
-            <strong>{{ $h }}時間{{ $m }}分</strong>
-        </div>
+        <button type="button" class="month-center" id="monthTrigger" aria-haspopup="dialog" aria-controls="monthPicker">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 2v2H5a2 2 0 0 0-2 2v2h18V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm14 8H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10z" />
+            </svg>
+            <span id="monthLabel">{{ $monthLabel }}</span>
+        </button>
 
-        <div class="att-actions" style="margin-top:16px;">
-            <a class="link" href="{{ route('attendance.index') }}">← ダッシュボードへ戻る</a>
-        </div>
-    </div>
-</div>
-@endsection
+        <a class="month-link next" href="{{ route('attendance.list', ['month' => $nextMonth]) }}" aria-label="翌月">翌月 →</a>
+    </form>
+
+    <table class="att-table">
+        <thead>
+            <tr>
+                <th>日付</th>
+                <th>出勤</th>
+                <th>退勤</th>
+                <th>休憩</th>
+                <th>合計</th>
+                <th>詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($days as $d)
+            <tr>
+                {{-- 日付：常にテキスト表示（リンクなし） --}}
+                <td>{{ $d['label'] }}</td>
+
+                <td>{{ $d['clock_in'] }}</td>
+                <td>{{ $d['clock_out'] }}</td>
+
+                <td>
+                    @php $bm = $d['break_min']; @endphp
+                    @if ($bm > 0)
+                    {{ intdiv($bm,60) }}時間{{ $bm % 60 }}分
+                    @else
+                    -
+                    @endif
+                </td>
+
+                <td>
+                    @php $wm = $d['work_min']; @endphp
+                    @if ($wm > 0)
+                    {{ intdiv($wm,60) }}時間{{ $wm % 60 }}分
+                    @else
+                    -
+                    @endif
+                </td>
+
+                {{-- 詳細：常にボタンで遷移（出勤無しの日は date 版ルートへ） --}}
+                <td>
+                    <a
+                        href="{{ $d['att_id']
+                  ? route('attendance.detail', ['id' => $d['att_id']])
+                  : route('attendance.detail.date', ['date' => $d['date']]) }}"
+                        class="detail-btn"
+                        aria-label="{{ $d['label'] }} の詳細">詳細</a>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+
+    {{-- 月ピッカー制御（ボタン→ネイティブmonthを開く／選択で自動送信） --}}
+    <script>
+        (function() {
+            const picker = document.getElementById('monthPicker');
+            const trigger = document.getElementById('monthTrigger');
+            const label = document.getElementById('monthLabel');
+            const form = document.getElementById('monthNav');
+
+            const fmt = v => v ? v.replace('-', '/') : '';
+
+            trigger.addEventListener('click', () => {
+                if (picker.showPicker) picker.showPicker();
+                else picker.focus();
+            });
+
+            picker.addEventListener('change', () => {
+                label.textContent = fmt(picker.value); // YYYY/MM
+                form.submit();
+            });
+        })();
+    </script>
+    @endsection
