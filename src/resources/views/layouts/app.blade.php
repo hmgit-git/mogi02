@@ -31,7 +31,7 @@
                 <a href="#" class="nav-btn" onclick="event.preventDefault(); alert('申請ページは準備中です');">申請</a>
                 <form method="POST" action="{{ route('logout') }}" class="nav-logout" novalidate>
                     @csrf
-                    <button type="submit" class="btn btn-primary">ログアウト</button>
+                    <button type="submit" class="nav-btn">ログアウト</button>
                 </form>
                 @endauth
             </nav>

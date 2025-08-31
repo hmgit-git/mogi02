@@ -208,7 +208,7 @@ class AttendanceController extends Controller
             return back()->with('auth_error', '退勤の記録に失敗しました。');
         }
 
-        return back()->with('status', 'おつかれさまでした！');
+        return back()->with('status', 'お疲れ様でした。');
     }
 
     /**

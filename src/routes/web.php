@@ -2,7 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Attendances\AttendanceController;
-use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\AdminAttendanceController;
+use App\Http\Controllers\Admin\AttendanceEditRequestController;
+use App\Http\Controllers\Admin\AdminStaffController;
 
 /**
  * 未ログイン（一般ユーザー）専用：画面だけ
@@ -49,12 +52,38 @@ Route::redirect('/', '/attendance');
 
 /** 管理者 */
 Route::prefix('admin')->name('admin.')->group(function () {
+
+    // --- 未ログイン時（管理者ログイン） ---
     Route::middleware('guest:admin')->group(function () {
-        Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login.form');
-        Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:6,1')->name('login');
+        Route::get('/login', [AdminLoginController::class, 'showLoginForm'])
+            ->name('login.form');
+        Route::post('/login', [AdminLoginController::class, 'login'])
+            ->middleware('throttle:6,1')
+            ->name('login');
     });
+
+    // --- 管理者ログイン後 ---
     Route::middleware('auth:admin')->group(function () {
-        Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
-        Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+        // ダッシュボード＝当日日次一覧
+        Route::get('/dashboard', [AdminAttendanceController::class, 'daily'])->name('dashboard');
+
+        // 日次一覧/詳細
+        Route::get('/attendances', [AdminAttendanceController::class, 'daily'])->name('attendances.daily');
+        Route::get('/attendances/{id}', [AdminAttendanceController::class, 'show'])->name('attendances.show');
+
+        // 承認リクエスト
+        Route::get('/requests', [AttendanceEditRequestController::class, 'index'])->name('requests.index');
+        Route::get('/requests/{id}', [AttendanceEditRequestController::class, 'show'])->name('requests.show');
+        Route::post('/requests/{id}/approve', [AttendanceEditRequestController::class, 'approve'])->name('requests.approve');
+        Route::post('/requests/{id}/reject',  [AttendanceEditRequestController::class, 'reject'])->name('requests.reject');
+
+        // ログアウト
+        Route::post('/logout', [AdminLoginController::class, 'logout'])->name('logout');
+    });
+
+    Route::middleware('auth:admin')->group(function () {
+        // ★ スタッフ一覧＆詳細
+        Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
+        Route::get('/staff/{user}', [AdminStaffController::class, 'show'])->name('staff.show');
     });
 });

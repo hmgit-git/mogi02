@@ -25,17 +25,14 @@
 .auth-container {
     width: 100%;
     max-width: 680px;
-    /* フォーム幅は常にこれ */
     margin: 40px auto;
     padding: 0 16px;
-    /* ← 横余白を入れて、狭い画面でも崩れない */
     color: var(--text);
 }
 
 .site-header__inner {
     max-width: 1540px;
-    /* PC条件 */
-    margin: 0 auto;
+docker    margin: 0 auto;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -70,8 +67,7 @@
 
 .input,
 .select,
-.btn,
-.checkbox-wrap {
+.btn {
     width: 100%;
 }
 
@@ -109,10 +105,6 @@
     cursor: pointer;
 }
 
-.btn-primary {
-    background: var(--accent);
-    color: #fff;
-}
 
 .btn-primary:hover {
     filter: brightness(.95);
@@ -164,4 +156,63 @@
     color: var(--error);
     margin-top: 6px;
     font-size: 13px;
+}
+
+/* === verify-email 用のレイアウト調整 === */
+.auth-container--wide {
+    max-width: 760px;
+    /* 720pxの枠を収めるために広めに */
+}
+
+/* 24px Bold、720x58 の枠 */
+.notice-hero {
+    width: 720px;
+    height: 58px;
+    margin: 0 auto 24px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+}
+
+/* グレーのメインボタン（「認証はこちら」） */
+.btn-gray {
+    background: #f0f0f0;
+    color: #333;
+    width: 300px;
+    height: 48px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-gray:hover {
+    filter: brightness(.98);
+}
+
+/* 青文字のテキストボタン（「認証メールを再送する」） */
+.btn-link-blue {
+    background: none;
+    border: none;
+    color: #007bff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 8px 4px;
+}
+
+/* 上部インフォ */
+.verify-alert {
+    margin-bottom: 16px;
+}
+
+/* ボタンの縦間隔 */
+.stack-16>*+* {
+    margin-top: 16px;
+}
+
+.stack-20>*+* {
+    margin-top: 20px;
 }

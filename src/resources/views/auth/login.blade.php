@@ -32,10 +32,6 @@
             <label class="auth-label" for="password">パスワード</label>
             <input id="password" class="input" type="password" name="password" required>
 
-            <label class="checkbox-wrap">
-                <input type="checkbox" name="remember"> ログイン状態を保持
-            </label>
-
             <button class="btn btn-primary" type="submit">ログイン</button>
 
             <div class="actions">

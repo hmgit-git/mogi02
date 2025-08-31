@@ -60,10 +60,12 @@ body {
     display: inline-block;
     padding: 8px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .25);
+    border: none;
     color: #fff;
     text-decoration: none;
     line-height: 1;
+    background: transparent;
+    cursor: pointer;
 }
 
 .nav-btn:hover {

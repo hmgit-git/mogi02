@@ -12,6 +12,8 @@
 use Illuminate\Support\Carbon;
 $date = Carbon::parse($today ?? now('Asia/Tokyo'));
 $youbi = ['日','月','火','水','木','金','土'][$date->dayOfWeek];
+$timeHm = Carbon::now('Asia/Tokyo')->format('H:i');
+
 
 // 状態ラベル
 $stateLabel = [
@@ -40,7 +42,7 @@ default => 'state-off',
         <div class="att-date">{{ $date->format('Y年n月j日') }}({{ $youbi }})</div>
 
         {{-- 現時間 --}}
-        <div class="att-time"><span id="nowTime">--:--</span></div>
+        <div class="att-time"><span id="nowTime">{{ $timeHm }}</span></div>
 
         {{-- フラッシュメッセージ（任意） --}}
         @if (session('status'))
