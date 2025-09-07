@@ -53,7 +53,7 @@ default => null,
             </button>
             @endif
 
-            <form method="POST" action="{{ route('verification.send') }}">
+            <form method="POST" action="{{ route('verification.send') }}" novalidate>
                 @csrf
                 <button type="submit" class="btn-link-blue">認証メールを再送する</button>
             </form>

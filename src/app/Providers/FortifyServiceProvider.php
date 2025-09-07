@@ -43,23 +43,18 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
-        // カスタム認証（メール未登録/パスワード不一致のメッセージ）
-        Fortify::authenticateUsing(function ($request) {
-            $user = User::where('email', $request->email)->first();
+        // カスタム認証（メール未登録のメッセージ）
 
-            if (! $user) {
-                throw ValidationException::withMessages([
-                    'email' => 'メールアドレスが登録されていません。',
-                ]);
+        Fortify::authenticateUsing(function (\Illuminate\Http\Request $request) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                return $user;
             }
 
-            if (! Hash::check($request->password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'password' => 'パスワードが正しくありません。',
-                ]);
-            }
-
-            return $user; // 成功
+            throw ValidationException::withMessages([
+                'email' => ['ログイン情報が登録されていません'],
+            ]);
         });
     }
 }

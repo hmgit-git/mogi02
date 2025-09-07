@@ -4,36 +4,39 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\User;                  
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Admin\UpdateAttendanceRequest;
+
 
 class AdminAttendanceController extends Controller
 {
-    /** 日次一覧（見出し・前月/翌月ナビ・表） */
     public function daily(Request $request)
     {
         $tz   = 'Asia/Tokyo';
-        $date = $request->query('date');
-        $d    = $date ? Carbon::createFromFormat('Y-m-d', $date, $tz) : Carbon::now($tz);
+        $date = $request->query('date'); // YYYY-MM-DD 期待
+        $d    = $date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+            ? \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $date, $tz)
+            : \Illuminate\Support\Carbon::now($tz);
         $d    = $d->startOfDay();
 
         // 当日の全ユーザーの勤怠＋休憩
-        $atts = Attendance::query()
-            ->with(['user:id,name', 'breaks']) // 余計な列を抑える
+        $atts = \App\Models\Attendance::with(['user', 'breaks'])
             ->whereDate('work_date', $d->toDateString())
-            ->orderBy(
-                User::select('name')
-                    ->whereColumn('users.id', 'attendances.user_id')
-            )
-            ->orderBy('attendances.id') 
-            ->get();
+            // Laravel 10 以前なら join でユーザー名ソートに変更
+            // ->join('users','users.id','=','attendances.user_id')
+            // ->orderBy('users.name')
+            // ->select('attendances.*')
+            // ->get();
+            ->get()
+            ->sortBy(fn($a) => $a->user?->name ?? ''); // 互換的な並び替え
 
         $rows = [];
-        $now  = Carbon::now($tz);
+        $now  = \Illuminate\Support\Carbon::now($tz);
+
         foreach ($atts as $att) {
-            // 退勤してなければ当日なら今、過去日ならその日の終わりまでで集計
             $asOf = $att->clock_out_at ?: ($d->isToday() ? $now : $d->copy()->endOfDay());
 
             $breakMin = $att->breaks->sum(function ($br) use ($asOf) {
@@ -56,16 +59,23 @@ class AdminAttendanceController extends Controller
             ];
         }
 
-        // 見出し・ナビ
+        // 見出し・ナビ（日次）
         $dateTitle = $d->format('Y年n月j日');
         $centerYmd = $d->format('Y/m/d');
-        $prevDate  = $d->copy()->subMonth()->format('Y-m-d'); // 要件の「前月/翌月」
-        $nextDate  = $d->copy()->addMonth()->format('Y-m-d');
+        $prevDate  = $d->copy()->subDay()->format('Y-m-d'); // ← 前日
+        $nextDate  = $d->copy()->addDay()->format('Y-m-d'); // ← 翌日
 
-        return view('admin.attendances.daily', compact('rows', 'dateTitle', 'centerYmd', 'prevDate', 'nextDate', 'd'));
+        return view('admin.attendances.daily', compact(
+            'rows',
+            'dateTitle',
+            'centerYmd',
+            'prevDate',
+            'nextDate',
+            'd'
+        ));
     }
 
-    /** 詳細（ユーザーUIと同テイスト） */
+    /** 詳細 */
     public function show($id)
     {
         $tz  = 'Asia/Tokyo';
@@ -98,5 +108,52 @@ class AdminAttendanceController extends Controller
         $h = intdiv($min, 60);
         $m = $min % 60;
         return sprintf('%d:%02d', $h, $m);
+    }
+
+    public function update(UpdateAttendanceRequest $request, $id)
+    {
+        $att = \App\Models\Attendance::with('breaks', 'user')->findOrFail($id);
+        $tz = 'Asia/Tokyo';
+        $workDate = $att->work_date->toDateString();
+
+        $toDateTime = function (?string $hm) use ($workDate, $tz) {
+            if (!$hm) return null;
+            return \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i', $workDate . ' ' . $hm, $tz);
+        };
+
+        $clockIn  = $toDateTime($request->input('clock_in_at'));
+        $clockOut = $toDateTime($request->input('clock_out_at'));
+
+        $breaksIn = collect($request->input('breaks', []))
+            ->map(fn($row) => [
+                'start_at' => $toDateTime($row['start_at'] ?? null),
+                'end_at'   => $toDateTime($row['end_at']   ?? null),
+            ])
+            ->values();
+
+        \DB::transaction(function () use ($att, $clockIn, $clockOut, $breaksIn, $request) {
+            $att->clock_in_at  = $clockIn;
+            $att->clock_out_at = $clockOut;
+
+            $att->breaks()->delete();
+            foreach ($breaksIn as $b) {
+                if (!$b['start_at'] && !$b['end_at']) continue;
+                $att->breaks()->create([
+                    'start_at' => $b['start_at'],
+                    'end_at'   => $b['end_at'],
+                ]);
+            }
+
+            $att->status = $att->clock_out_at
+                ? 'finished'
+                : ($att->clock_in_at ? 'working' : 'not_started');
+
+            // 備考は必須なので必ず上書き
+            $att->note = trim((string)$request->input('reason', ''));
+
+            $att->save();
+        });
+
+        return back()->with('status', '勤怠を保存しました。');
     }
 }

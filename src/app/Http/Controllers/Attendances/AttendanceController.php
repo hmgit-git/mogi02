@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Http\Requests\StoreAttendanceEditRequest;
-use App\Models\AttendanceEditRequest as EditReq;
+use App\Models\AttendanceEditRequest;
 use Illuminate\Support\Facades\Schema;
 
 
@@ -229,10 +229,18 @@ class AttendanceController extends Controller
         $end    = $month->copy()->endOfMonth();
         $today0 = Carbon::now('Asia/Tokyo')->startOfDay();
 
-        // その月の勤怠＋休憩をまとめて取得
+        // その月の勤怠＋休憩＋（自分の承認待ち申請だけ）を取得
         $atts = Attendance::where('user_id', $user->id)
             ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
-            ->with('breaks')
+            ->with([
+                'breaks',
+                // ★ 追加：自分の pending だけを一緒に読む（最小カラム）
+                'editRequests' => function ($q) use ($user) {
+                    $q->where('applicant_id', $user->id)
+                        ->where('status', \App\Models\AttendanceEditRequest::STATUS_PENDING)
+                        ->select('id', 'attendance_id');
+                },
+            ])
             ->get()
             ->keyBy(fn($a) => $a->work_date->toDateString());
 
@@ -267,15 +275,19 @@ class AttendanceController extends Controller
                 $worked   = 0;
             }
 
+            // ★ 追加：承認待ち申請が1件でもあれば、そのIDを拾う
+            $pendingReqId = $att?->editRequests?->first()?->id;
+
             $days[] = [
-                'date'       => $key,
-                'label'      => $label, // ← ここが MM/DD(曜)
-                'att_id'     => $att->id ?? null,
-                'clock_in'   => $clockIn  ? $clockIn->format('H:i')  : '-',
-                'clock_out'  => $clockOut ? $clockOut->format('H:i') : '-',
-                'break_min'  => $breakMin,
-                'work_min'   => $worked,
-                'status'     => $att->status ?? '',
+                'date'           => $key,
+                'label'          => $label,
+                'att_id'         => $att->id ?? null,
+                'clock_in'       => $clockIn  ? $clockIn->format('H:i')  : '-',
+                'clock_out'      => $clockOut ? $clockOut->format('H:i') : '-',
+                'break_min'      => $breakMin,
+                'work_min'       => $worked,
+                'status'         => $att->status ?? '',
+                'pending_req_id' => $pendingReqId, // ★ ビューで使う
             ];
         }
 
@@ -371,49 +383,41 @@ class AttendanceController extends Controller
     }
     public function requestUpdate(StoreAttendanceEditRequest $request)
     {
-        $user = Auth::user();
+        // H:i を Y-m-d H:i に合成
+        $clockIn  = $request->mergedDateTime($request->input('clock_in_at'));
+        $clockOut = $request->mergedDateTime($request->input('clock_out_at'));
+
+        $breaksInput = $request->input('breaks', []);
+        $tz = 'Asia/Tokyo';
         $date = $request->input('date');
-        $cin  = $request->input('clock_in'); // "HH:MM" or null
-        $cout = $request->input('clock_out');
-        $note = $request->input('note');
 
-        $d    = Carbon::createFromFormat('Y-m-d', $date, 'Asia/Tokyo');
-        $cinAt  = $cin  ? Carbon::createFromFormat('Y-m-d H:i', "{$date} {$cin}",  'Asia/Tokyo') : null;
-        $coutAt = $cout ? Carbon::createFromFormat('Y-m-d H:i', "{$date} {$cout}", 'Asia/Tokyo') : null;
-
-        // 対象日の勤怠（無ければ作らない＝申請は「候補」を持つだけ）
-        $att = Attendance::where('user_id', $user->id)
-            ->whereDate('work_date', $date)
-            ->first();
-
-        // 申請レコード作成
-        $req = new EditReq();
-        $req->attendance_id     = $att?->id;
-        $req->user_id           = $user->id;
-        $req->req_clock_in_at   = $cinAt;
-        $req->req_clock_out_at  = $coutAt;
-        $req->reason            = $note;
-        $req->status            = 'pending';
-
-        // 休憩の申請をJSONで保存（カラムがある場合のみ）
-        if (Schema::hasColumn('attendance_edit_requests', 'requested_breaks')) {
-            $breaks = collect($request->input('breaks', []))
-                ->filter(fn($r) => ($r['start'] ?? null) || ($r['end'] ?? null))
-                ->map(function ($r) use ($date) {
-                    $s = $r['start'] ?? null;
-                    $e = $r['end']   ?? null;
-                    return [
-                        'start_at' => $s ? "{$date} {$s}:00" : null,
-                        'end_at'   => $e ? "{$date} {$e}:00" : null,
-                    ];
-                })->values()->all();
-            $req->requested_breaks = $breaks; // castsにarrayが必要
+        $breaks = [];
+        foreach ($breaksInput as $b) {
+            $s = $b['start_at'] ?? null;
+            $e = $b['end_at'] ?? null;
+            if (!$s && !$e) continue; // 両方空はスキップ
+            $breaks[] = [
+                'start_at' => $s ? \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $s, $tz)->toDateTimeString() : null,
+                'end_at'   => $e ? \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $e, $tz)->toDateTimeString()   : null,
+            ];
         }
 
-        $req->save();
+        $changes = [
+            'clock_in_at'  => $clockIn,
+            'clock_out_at' => $clockOut,
+            'breaks'       => array_values($breaks),
+        ];
+
+        \App\Models\AttendanceEditRequest::create([
+            'attendance_id'     => $request->input('attendance_id'),
+            'applicant_id'      => auth()->id(),
+            'requested_changes' => $changes,
+            'reason'            => $request->input('reason'),
+            'status'            => \App\Models\AttendanceEditRequest::STATUS_PENDING,
+        ]);
 
         return redirect()
-            ->route('attendance.detail.date', ['date' => $date])
+            ->route('attendance.detail', $request->input('attendance_id'))
             ->with('status', '修正申請を送信しました。');
     }
 }

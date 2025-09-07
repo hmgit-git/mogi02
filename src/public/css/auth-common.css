@@ -1,41 +1,72 @@
+/* ================================
+   Auth Common Styles (auth-common.css)
+   ================================ */
+
 :root {
     --text: #333;
-    /* 基本文字色を黒系に */
+    /* 基本文字色 */
     --bg: #f6f6f6;
-    /* 背景は薄いグレー */
+    /* 画面背景 */
     --card: #ffffff;
+    /* カード背景 */
     --border: #ddd;
-    /* 枠線もグレー */
+    /* 枠線 */
     --accent: #000;
-    /* ボタン・リンクの黒 */
+    /* ボタン・リンク色（黒） */
     --error: #c0392b;
+    /* エラー赤 */
     --muted: #666;
-    /* ラベルや補助文字はグレー */
+    /* ラベル/補助文字 */
     --radius: 16px;
+    /* 角丸 */
     --shadow: 0 10px 24px rgba(0, 0, 0, .06);
+    /* カード影 */
 }
 
+/* テーマ（必要なら上書き用） */
 .theme-admin {
     --text: #333;
     --muted: #666;
     --accent: #000;
-    /* ← 黒 */
 }
 
+/* ベース */
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+}
+
+/* ヘッダー内側（任意の共通ヘッダー用） */
+.site-header__inner {
+    max-width: 1540px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+}
+
+/* レイアウト */
 .auth-container {
     width: 100%;
     max-width: 680px;
     margin: 40px auto;
     padding: 0 16px;
+    /* 画面端の余白 */
     color: var(--text);
-}
-
-.site-header__inner {
-    max-width: 1540px;
-docker    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
 }
 
 .auth-card {
@@ -53,7 +84,7 @@ docker    margin: 0 auto;
     text-align: center;
 }
 
-/* ラベルは上、入力は横幅いっぱい */
+/* フォーム */
 .auth-form {
     display: grid;
     gap: 16px;
@@ -65,6 +96,7 @@ docker    margin: 0 auto;
     margin-bottom: 6px;
 }
 
+/* 入力系 */
 .input,
 .select,
 .btn {
@@ -74,7 +106,7 @@ docker    margin: 0 auto;
 .input,
 .select {
     height: 60px;
-    /* 指定 */
+    /* 指定高さ */
     padding: 0 16px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -83,12 +115,17 @@ docker    margin: 0 auto;
     outline: none;
 }
 
+.input::placeholder {
+    color: #999;
+}
+
 .input:focus,
 .select:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(139, 121, 105, .12);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, .12);
 }
 
+/* チェックボックス等の横並び */
 .checkbox-wrap {
     display: flex;
     align-items: center;
@@ -96,20 +133,26 @@ docker    margin: 0 auto;
     font-size: 14px;
 }
 
+/* ボタン */
 .btn {
     height: 60px;
-    /* 指定 */
+    /* 指定高さ */
     border: none;
     border-radius: 12px;
     font-weight: 700;
     cursor: pointer;
 }
 
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
 
 .btn-primary:hover {
     filter: brightness(.95);
 }
 
+/* テキストリンク */
 .link {
     color: var(--accent);
     text-decoration: none;
@@ -120,6 +163,7 @@ docker    margin: 0 auto;
     text-decoration: underline;
 }
 
+/* 下部アクション行 */
 .actions {
     display: flex;
     gap: 12px;
@@ -129,6 +173,7 @@ docker    margin: 0 auto;
     margin-top: 8px;
 }
 
+/* アラート */
 .alert {
     border-radius: 12px;
     padding: 12px 14px;
@@ -152,19 +197,19 @@ docker    margin: 0 auto;
     padding-left: 20px;
 }
 
-.help.error {
-    color: var(--error);
-    margin-top: 6px;
+/* フィールド下のエラーテキスト */
+.field-error {
+    margin: 6px 0 12px;
     font-size: 13px;
+    color: var(--error);
 }
 
-/* === verify-email 用のレイアウト調整 === */
+
+/* === verify-email など通知画面での横幅調整（必要なページのみ使用） === */
 .auth-container--wide {
     max-width: 760px;
-    /* 720pxの枠を収めるために広めに */
 }
 
-/* 24px Bold、720x58 の枠 */
 .notice-hero {
     width: 720px;
     height: 58px;
@@ -175,7 +220,7 @@ docker    margin: 0 auto;
     text-align: center;
 }
 
-/* グレーのメインボタン（「認証はこちら」） */
+/* 灰ボタン（通知画面など） */
 .btn-gray {
     background: #f0f0f0;
     color: #333;
@@ -191,7 +236,7 @@ docker    margin: 0 auto;
     filter: brightness(.98);
 }
 
-/* 青文字のテキストボタン（「認証メールを再送する」） */
+/* 青文字リンクボタン */
 .btn-link-blue {
     background: none;
     border: none;
@@ -203,16 +248,75 @@ docker    margin: 0 auto;
     padding: 8px 4px;
 }
 
-/* 上部インフォ */
+/* 上部インフォの余白 */
 .verify-alert {
     margin-bottom: 16px;
 }
 
-/* ボタンの縦間隔 */
+/* スタックヘルパー */
 .stack-16>*+* {
     margin-top: 16px;
 }
 
 .stack-20>*+* {
     margin-top: 20px;
+}
+
+/* ================================
+   レスポンシブ
+   ================================ */
+
+/* PC帯（1400–1540px）：カードを少し広めに・余白増し */
+@media (min-width: 1400px) and (max-width: 1540px) {
+    .auth-container {
+        max-width: 760px;
+    }
+
+    .auth-card {
+        padding: 36px 28px 28px;
+    }
+
+    .auth-title {
+        font-size: 30px;
+    }
+}
+
+/* タブレット帯（768–850px）：読みやすい幅に、余白は控えめ */
+@media (min-width: 768px) and (max-width: 850px) {
+    .auth-container {
+        max-width: 640px;
+        padding: 0 20px;
+    }
+
+    .auth-card {
+        padding: 24px 20px;
+    }
+
+    .input,
+    .select {
+        height: 56px;
+    }
+}
+
+/* スマホ（～640px）：全幅・タップしやすい高さ */
+@media (max-width: 640px) {
+    .auth-container {
+        max-width: 100%;
+        padding: 0 16px;
+        margin: 28px auto;
+    }
+
+    .auth-card {
+        padding: 22px 16px;
+    }
+
+    .auth-title {
+        font-size: 24px;
+    }
+
+    .input,
+    .select,
+    .btn {
+        height: 56px;
+    }
 }

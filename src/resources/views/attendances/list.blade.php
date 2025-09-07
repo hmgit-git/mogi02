@@ -67,20 +67,28 @@
                     @endif
                 </td>
 
-                {{-- 詳細：常にボタンで遷移（出勤無しの日は date 版ルートへ） --}}
+                {{-- 詳細：承認待ちがあれば申請詳細へ、なければ従来どおり --}}
                 <td>
+                    @if (!empty($d['pending_req_id']))
+                    {{-- 承認待ち → 申請詳細（編集不可メッセージが出る画面） --}}
+                    <a
+                        href="{{ route('my.requests.show', $d['pending_req_id']) }}"
+                        class="detail-btn"
+                        aria-label="{{ $d['label'] }} の申請詳細">詳細</a>
+                    @else
+                    {{-- 承認待ちなし → 勤怠詳細 or 日付詳細へ --}}
                     <a
                         href="{{ $d['att_id']
-                  ? route('attendance.detail', ['id' => $d['att_id']])
-                  : route('attendance.detail.date', ['date' => $d['date']]) }}"
+                                  ? route('attendance.detail', ['id' => $d['att_id']])
+                                  : route('attendance.detail.date', ['date' => $d['date']]) }}"
                         class="detail-btn"
                         aria-label="{{ $d['label'] }} の詳細">詳細</a>
+                    @endif
                 </td>
             </tr>
             @endforeach
         </tbody>
     </table>
-
 
     {{-- 月ピッカー制御（ボタン→ネイティブmonthを開く／選択で自動送信） --}}
     <script>

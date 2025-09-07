@@ -8,29 +8,38 @@ class RegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // 認可は全員OK
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'password_confirmation' => ['required', 'string', 'min:8', 'same:password'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'email.required' => 'メールアドレスは必須です。',
-            'email.email' => '正しいメールアドレス形式で入力してください。',
-            'email.max' => 'メールアドレスは255文字以内で入力してください。',
-            'email.unique' => 'このメールアドレスは既に登録されています。',
-            'password.required' => 'パスワードは必須です。',
-            'password.min' => 'パスワードは8文字以上で入力してください。',
-            'password_confirmation.required' => '確認用パスワードは必須です。',
-            'password_confirmation.same' => '確認用パスワードが一致しません。',
+            'name.required'     => 'お名前を入力してください',
+            'email.required'    => 'メールアドレスを入力してください',
+            'email.email'       => 'メールアドレスの形式が正しくありません',
+            'email.unique'      => 'すでに登録されているメールアドレスです',
+            'password.required' => 'パスワードを入力してください',
+            'password.min'      => 'パスワードは8文字以上で入力してください',
+            'password.confirmed' => 'パスワードと一致しません',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'お名前',
+            'email' => 'メールアドレス',
+            'password' => 'パスワード',
+            'password_confirmation' => 'パスワード（確認）',
         ];
     }
 }

@@ -28,13 +28,16 @@
                 @auth
                 <a href="{{ route('attendance.index') }}" class="nav-btn">勤怠</a>
                 <a href="{{ route('attendance.list') }}" class="nav-btn">勤怠一覧</a>
-                <a href="#" class="nav-btn" onclick="event.preventDefault(); alert('申請ページは準備中です');">申請</a>
+
+                <a href="{{ route('my.requests.pending') }}" class="nav-btn">申請</a>
+
                 <form method="POST" action="{{ route('logout') }}" class="nav-logout" novalidate>
                     @csrf
                     <button type="submit" class="nav-btn">ログアウト</button>
                 </form>
                 @endauth
             </nav>
+
 
         </div>
     </header>

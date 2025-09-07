@@ -1,21 +1,21 @@
-/* =========================
-   Attendance (ログイン後画面) 共通
-   ========================= */
+/* =====================================
+   Attendance (ログイン後画面) 共通CSS
+   ===================================== */
 
-/* ===== 共通ラッパ：勤怠画面は幅900pxに統一 ===== */
+/* ===== レイアウト・共通幅 ===== */
 .att-wrap {
     max-width: 900px;
     margin: 0 auto;
     padding: 20px 16px;
 }
 
-/* 「auth-card」が幅を絞っている場合に上書き（ログイン後だけ適用） */
+/* ログイン後カード幅をフルに（必要な画面だけ反映） */
 .theme-user .auth-card {
     width: 100%;
     max-width: 100%;
 }
 
-/* --- Hero（状態・日付・時計） --- */
+/* ===== ヒーロー（状態・日付・時計） ===== */
 .att-hero {
     display: grid;
     gap: 14px;
@@ -30,10 +30,8 @@
     letter-spacing: .02em;
     margin: 0 auto 4px;
     border: 1px solid var(--border, #e5e7eb);
-    /* フォールバック付き */
 }
 
-/* 状態ごとのモノトーン */
 .state-off {
     background: #f2f2f2;
     color: #333;
@@ -72,12 +70,13 @@
     /* 要件：高さ60px */
 }
 
-/* --- 横並びボタン（退勤＋休憩） --- */
+/* 横並びボタン（退勤＋休憩） */
 .btn-row {
     display: flex;
     gap: 12px;
     align-items: stretch;
 }
+
 .btn-row>form {
     flex: 1;
     min-width: 0;
@@ -100,7 +99,7 @@
     background: #f7f7f7;
 }
 
-/* --- 一覧/詳細のテーブル共通 --- */
+/* ===== 一覧/詳細のテーブル共通 ===== */
 .att-table {
     width: 100%;
     border-collapse: collapse;
@@ -110,7 +109,6 @@
 .att-table th,
 .att-table td {
     border: 1px solid var(--border, #e5e7eb);
-    /* フォールバック付き */
     padding: 10px 12px;
     vertical-align: top;
 }
@@ -121,10 +119,10 @@
     font-weight: 600;
     white-space: nowrap;
     width: 180px;
-    /* 詳細テーブルで効く。一覧では余白として機能 */
+    /* 詳細テーブルの見出し幅 */
 }
 
-/* --- 月フィルター行（一覧） --- */
+/* ===== フィルター/ナビ周り ===== */
 .att-filter {
     display: flex;
     gap: 12px;
@@ -138,7 +136,17 @@
     min-width: 220px;
 }
 
-/* --- フラッシュ（任意） --- */
+/* タイトル（左に黒い縦棒） */
+.section-title {
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 6px solid #000;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 40px;
+}
+
+/* フラッシュ */
 .alert {
     padding: 10px 12px;
     border-radius: 8px;
@@ -157,16 +165,6 @@
     color: #b94a48;
 }
 
-/* タイトル：左に黒い縦棒 */
-.section-title {
-    margin: 0 0 12px;
-    padding-left: 12px;
-    border-left: 6px solid #000;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 40px;
-}
-
 /* 月ナビ（← 前月 | カレンダー+年月 | 翌月 →） */
 .month-nav {
     display: flex;
@@ -174,45 +172,6 @@
     gap: 12px;
     flex-wrap: wrap;
     margin: 12px 0 16px;
-}
-
-/* ボタン（モノトーン・アウトライン） */
-.btn-outline {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #fff;
-    color: #000;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    text-decoration: none;
-    line-height: 1;
-}
-
-.btn-outline:hover {
-    background: #f7f7f7;
-}
-
-/* カレンダートリガー内のアイコン */
-.month-trigger svg {
-    width: 18px;
-    height: 18px;
-    display: block;
-}
-
-/* ネイティブのmonth入力は視覚的に隠す（スクリーンリーダーは可） */
-.visually-hidden {
-    position: absolute !important;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    overflow: hidden;
-    white-space: nowrap;
 }
 
 /* 1枠の月ナビ（左右端に前/翌、中央に年月） */
@@ -267,7 +226,25 @@
     display: block;
 }
 
-/* アクセシビリティ対応の視覚的非表示 */
+/* ボタン（モノトーン・アウトライン） */
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #000;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.btn-outline:hover {
+    background: #f7f7f7;
+}
+
+/* 視覚的非表示（スクリーンリーダーには残す） */
 .visually-hidden {
     position: absolute !important;
     width: 1px;
@@ -281,6 +258,7 @@
     white-space: nowrap;
 }
 
+/* 一覧の「詳細」リンク風ボタン */
 .detail-btn {
     display: inline-block;
     background: transparent;
@@ -290,7 +268,6 @@
     text-decoration: none;
     line-height: 1;
     padding: 6px 2px;
-    /* クリックしやすさだけ少し */
     cursor: pointer;
 }
 
@@ -303,6 +280,7 @@
     pointer-events: none;
 }
 
+/* ===== 入力・表示部品 ===== */
 .triple {
     display: grid;
     grid-template-columns: 1fr 24px 1fr;
@@ -325,20 +303,158 @@
     background: #fff;
 }
 
+/* バリデーションエラー */
 .field-error {
     color: #c0392b;
     font-size: 12px;
     margin-top: 4px;
 }
 
-/* 入力風“静的”ボックス：編集不可＆フォーカス不可 */
+/* 入力風“静的”ボックス（.input と揃える） */
 .input-static {
     background: #fff;
     pointer-events: none;
     cursor: default;
-    border: none;
+}
+
+.input.input-static {
+    border: 1px solid var(--border, #ddd);
+    background: #fff;
+    height: 40px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    font: inherit;
 }
 
 .input-static:focus {
     outline: none;
+}
+
+/* 備考など複数行の静的表示 */
+.input-static-note {
+    border: 1px solid var(--border, #ddd);
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font: inherit;
+    white-space: pre-wrap;
+    min-height: 3em;
+    display: block;
+}
+
+/* ===== 申請詳細：承認待ちメッセージ ===== */
+.att-pending-note {
+    margin-top: 12px;
+    text-align: right;
+    color: #c0392b;
+    font-weight: 600;
+}
+
+/* CSV出力用のボタン */
+.csv-export {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.csv-export .btn-csv {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+    border-radius: 10px;
+    text-decoration: none;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+}
+
+.csv-export .btn-csv:hover {
+    background: #333;
+    border-color: #333;
+}
+
+/* ==== フォーム右下の送信ボタン専用 ==== */
+.form-actions-right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.btn-submit {
+    width: 130px;
+    height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+    border-radius: 10px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .2s, border-color .2s, transform .02s;
+}
+
+.btn-submit:hover {
+    background: #333;
+    border-color: #333;
+}
+
+.btn-submit:active {
+    transform: translateY(1px);
+}
+
+/* 完了状態（押せない・グレイアウト） */
+.btn-submit.is-done,
+.btn-submit[aria-disabled="true"] {
+    background: #9e9e9e;
+    border-color: #9e9e9e;
+    color: #fff;
+    cursor: default;
+    pointer-events: none;
+    opacity: 1;
+}
+
+/* レスポンシブ調整 ===== */
+
+/* タブレット (768-850px) */
+@media (min-width: 768px) and (max-width: 850px) {
+    .att-wrap {
+        padding: 16px 12px;
+    }
+
+    .att-table th,
+    .att-table td {
+        padding: 8px 10px;
+    }
+
+    .triple {
+        max-width: 380px;
+    }
+
+    .month-bar {
+        grid-template-columns: 1fr auto 1fr;
+        gap: 8px;
+    }
+}
+
+/* PC (1400-1540px) — 余白や可読性を少し改善 */
+@media (min-width: 1400px) and (max-width: 1540px) {
+    .att-wrap {
+        max-width: 1100px;
+    }
+
+    .att-table th,
+    .att-table td {
+        padding: 12px 14px;
+    }
 }
