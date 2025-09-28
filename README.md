@@ -48,14 +48,21 @@ Docker Build
 17. テストの実行 php artisan test
 18. サンプルユーザでログインする場合は下記をご使用ください
   - サンプルユーザ１
-  ユーザ名：user1@example.com
+  一般ユーザ名：user1@example.com
   パスワード：password
   - サンプルユーザ２
-  ユーザ名：user2@example.com
+  一般ユーザ名：user2@example.com
   パスワード：password
   - サンプルユーザ３
-  ユーザ名：user3@example.com
+  一般ユーザ名：user3@example.com
   パスワード：password
+  - サンプルユーザ４
+  管理者ユーザ名：admin1@example.com
+  パスワード：password
+  - サンプルユーザ５
+  管理者ユーザ名：admin2@example.com
+  パスワード：password
+
 # 使用技術(実行環境)
 1. PHP 7.4.9
 2. Laravel 8.83.8
