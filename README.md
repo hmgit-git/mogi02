@@ -82,6 +82,4 @@ Docker Build
 # URL
 ・アプリケーション：http://localhost/ （一般ログイン: /login、管理者ログイン: /admin/login）・phpMyAdmin：http//localhost.8080/　・mailhog：http://localhost:8025/
 # ER図
-<img width="501" height="571" alt="ER" src="https://github.com/user-attachments/assets/7029efe9-eea1-4f24-9117-f08c39bc03d2" />
-![ER 図](ER.png)
-
+![ER 図](docs/er/ER.png)
