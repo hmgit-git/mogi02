@@ -80,5 +80,5 @@ Docker Build
 /admin プレフィックス付きでアクセスし、auth:admin ミドルウェアが適用されます。
 管理者ログイン後に利用可能な勤怠一覧、スタッフ管理、申請承認などの機能が含まれます。
 # URL
-・アプリケーション：http://localhost/ ・phpMyAdmin：http//localhost.8080/　・mailhog：http://localhost:8025/
+・アプリケーション：http://localhost/ （一般ログイン: /login、管理者ログイン: /admin/login）・phpMyAdmin：http//localhost.8080/　・mailhog：http://localhost:8025/
 # ER図
