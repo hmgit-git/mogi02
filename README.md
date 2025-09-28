@@ -48,14 +48,21 @@ Docker Build
 17. テストの実行 php artisan test
 18. サンプルユーザでログインする場合は下記をご使用ください
   - サンプルユーザ１
-  ユーザ名：user1@example.com
+  一般ユーザ名：user1@example.com
   パスワード：password
   - サンプルユーザ２
-  ユーザ名：user2@example.com
+  一般ユーザ名：user2@example.com
   パスワード：password
   - サンプルユーザ３
-  ユーザ名：user3@example.com
+  一般ユーザ名：user3@example.com
   パスワード：password
+  - サンプルユーザ４
+  管理者ユーザ名：admin1@example.com
+  パスワード：password
+  - サンプルユーザ５
+  管理者ユーザ名：admin2@example.com
+  パスワード：password
+
 # 使用技術(実行環境)
 1. PHP 7.4.9
 2. Laravel 8.83.8
@@ -73,5 +80,6 @@ Docker Build
 /admin プレフィックス付きでアクセスし、auth:admin ミドルウェアが適用されます。
 管理者ログイン後に利用可能な勤怠一覧、スタッフ管理、申請承認などの機能が含まれます。
 # URL
-・アプリケーション：http://localhost/ ・phpMyAdmin：http//localhost.8080/　・mailhog：http://localhost:8025/
+・アプリケーション：http://localhost/ （一般ログイン: /login、管理者ログイン: /admin/login）・phpMyAdmin：http//localhost.8080/　・mailhog：http://localhost:8025/
 # ER図
+![ER 図](ER.drawio.png)
