@@ -25,13 +25,8 @@ class AdminAttendanceController extends Controller
         // 当日の全ユーザーの勤怠＋休憩
         $atts = \App\Models\Attendance::with(['user', 'breaks'])
             ->whereDate('work_date', $d->toDateString())
-            // Laravel 10 以前なら join でユーザー名ソートに変更
-            // ->join('users','users.id','=','attendances.user_id')
-            // ->orderBy('users.name')
-            // ->select('attendances.*')
-            // ->get();
             ->get()
-            ->sortBy(fn($a) => $a->user?->name ?? ''); // 互換的な並び替え
+            ->sortBy(fn($a) => $a->user?->name ?? ''); 
 
         $rows = [];
         $now  = \Illuminate\Support\Carbon::now($tz);

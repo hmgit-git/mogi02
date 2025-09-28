@@ -6,12 +6,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Attendances\AttendanceController;
 use App\Http\Controllers\User\EditRequestListController;
 
-// 管理者側
-use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
-use App\Http\Controllers\Admin\AdminAttendanceController;
-use App\Http\Controllers\Admin\AttendanceEditRequestController;
-use App\Http\Controllers\Admin\AdminStaffController;
-
 /**
  * 未ログイン（一般ユーザー）専用：画面だけ
  * Fortify/Breeze 等の POST は既定ルートを利用
@@ -41,7 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/attendance/out',         [AttendanceController::class, 'punchOut'])->name('attendance.punch.out');
 
     Route::get('/attendance/list',         [AttendanceController::class, 'list'])->name('attendance.list');
-    Route::get('/attendance/detail/{id}',  [AttendanceController::class, 'detail'])->name('attendance.detail');
+    Route::get('/attendance/detail/{id}',  [AttendanceController::class, 'detail'])
+        ->whereNumber('id')->name('attendance.detail');
 
     Route::get('/attendance/detail/date/{date}', [AttendanceController::class, 'detailByDate'])
         ->where('date', '\d{4}-\d{2}-\d{2}')
@@ -51,44 +46,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/attendance/detail/request', [AttendanceController::class, 'requestUpdate'])
         ->name('attendance.request');
 
+    // 自分の申請一覧
+    Route::redirect('/my/requests', '/my/requests/pending')->name('my.requests.index');
     Route::get('/my/requests/pending',  [EditRequestListController::class, 'pending'])->name('my.requests.pending');
     Route::get('/my/requests/approved', [EditRequestListController::class, 'approved'])->name('my.requests.approved');
-    Route::get('/my/requests/{id}',     [EditRequestListController::class, 'show'])->name('my.requests.show');
+    Route::get('/my/requests/{id}',     [EditRequestListController::class, 'show'])
+        ->whereNumber('id')->name('my.requests.show');
 });
 
 /** トップは勤怠へ（未ログインなら /login へ誘導される） */
 Route::redirect('/', '/attendance');
 
-/** 管理者 */
-Route::prefix('admin')->name('admin.')->group(function () {
+// ===============================
+// ▼ 共用化ルート（PG05 / PG09, PG06 / PG12）
+// ===============================
+Route::middleware('auth.any')->group(function () {
+    // 勤怠詳細 (PG05: user, PG09: admin) → guard に応じてリダイレクト
+    Route::get('/attendance/{id}', function ($id) {
+        if (auth('admin')->check()) {
+            return redirect()->route('admin.attendances.show', ['id' => $id]);
+        }
+        return redirect()->route('attendance.detail', ['id' => $id]);
+    })->whereNumber('id')->name('attendance.show.shared');
 
-    // --- 未ログイン時（管理者ログイン） ---
-    Route::middleware('guest:admin')->group(function () {
-        Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login.form');
-        Route::post('/login', [AdminLoginController::class, 'login'])
-            ->middleware('throttle:6,1')
-            ->name('login');
-    });
-
-    // --- 管理者ログイン後 ---
-    Route::middleware('auth:admin')->group(function () {
-        // ダッシュボード & 勤怠
-        Route::get('/dashboard', [AdminAttendanceController::class, 'daily'])->name('dashboard');
-        Route::get('/attendances', [AdminAttendanceController::class, 'daily'])->name('attendances.daily');
-        Route::get('/attendances/{id}', [AdminAttendanceController::class, 'show'])->name('attendances.show');
-        Route::put('/attendances/{id}', [AdminAttendanceController::class, 'update'])->name('attendances.update');
-
-        // 申請
-        Route::get('/requests', [AttendanceEditRequestController::class, 'index'])->name('requests.index');
-        Route::get('/requests/{id}', [AttendanceEditRequestController::class, 'show'])->name('requests.show');
-        Route::post('/requests/{id}/approve', [AttendanceEditRequestController::class, 'approve'])->name('requests.approve');
-
-        // スタッフ一覧 → 個別の月次勤怠
-        Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
-        Route::get('/staff/{user}/attendances', [AdminStaffController::class, 'monthly'])->name('staff.attendances');
-        Route::get('/staff/{user}/attendances/csv', [AdminStaffController::class, 'exportCsv'])->name('staff.attendances.csv');
-
-        // ログアウト（POST）
-        Route::post('/logout', [AdminLoginController::class, 'logout'])->name('logout');
-    });
+    // 申請一覧 (PG06: user, PG12: admin) → guard に応じてリダイレクト
+    Route::get('/stamp_correction_request/list', function () {
+        if (auth('admin')->check()) {
+            return redirect()->route('admin.requests.index');
+        }
+        return redirect()->route('my.requests.pending');
+    })->name('requests.list.shared');
 });

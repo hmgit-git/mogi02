@@ -156,7 +156,6 @@ $mdStr = $dateObj->format('n月j日');
         <div class="form-actions-right">
             <button type="submit" class="btn-submit">修正</button>
         </div>
-
     </form>
 </div>
 @endsection

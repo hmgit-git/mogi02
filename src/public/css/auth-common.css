@@ -154,7 +154,7 @@ body {
 
 /* テキストリンク */
 .link {
-    color: var(--accent);
+    color: #007bff; 
     text-decoration: none;
     font-weight: 600;
 }
@@ -166,11 +166,8 @@ body {
 /* 下部アクション行 */
 .actions {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
+    justify-content: center;
+    margin-top: 16px;
 }
 
 /* アラート */

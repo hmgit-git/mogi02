@@ -19,7 +19,6 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            // ★ 管理者区別用 role カラムを追加
             $table->string('role', 10)->default('user'); // 'user' or 'admin'
             $table->rememberToken();
             $table->timestamps();

@@ -46,7 +46,7 @@
                 <td>
                     @php $bm = $r['break_min']; @endphp
                     @if ($bm > 0)
-                    {{ intdiv($bm,60) }}時間{{ $bm % 60 }}分
+                    {{ intdiv($bm,60) }}:{{ $bm % 60 }}
                     @else
                     -
                     @endif
@@ -54,7 +54,7 @@
                 <td>
                     @php $wm = $r['work_min']; @endphp
                     @if ($wm > 0)
-                    {{ intdiv($wm,60) }}時間{{ $wm % 60 }}分
+                    {{ intdiv($wm,60) }}:{{ $wm % 60 }}
                     @else
                     -
                     @endif

@@ -24,7 +24,13 @@
                 <img src="{{ asset('images/logo.svg') }}" alt="ロゴ" class="site-header__logo">
             </a>
 
-            <nav class="site-header__nav">
+            <button class="site-header__menu-toggle" id="menuToggle"
+                aria-label="メニューを開閉" aria-expanded="false" aria-controls="siteHeaderNav">
+                <span class="bar"></span>
+            </button>
+
+            <nav class="site-header__nav" id="siteHeaderNav">
+
                 @auth
                 <a href="{{ route('attendance.index') }}" class="nav-btn">勤怠</a>
                 <a href="{{ route('attendance.list') }}" class="nav-btn">勤怠一覧</a>
@@ -45,6 +51,39 @@
     <main class="site-main">
         @yield('content')
     </main>
+    <script>
+        (function() {
+            const header = document.querySelector('.site-header');
+            const toggle = document.getElementById('menuToggle');
+            const nav = document.getElementById('siteHeaderNav');
+
+            if (!toggle || !header || !nav) return;
+
+            // 開閉トグル
+            toggle.addEventListener('click', () => {
+                const opened = header.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', opened ? 'true' : 'false');
+            });
+
+            // ナビ内クリックで自動クローズ（遷移時の開きっぱなし防止）
+            nav.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.closest('a') || target.closest('button[type="submit"]')) {
+                    header.classList.remove('is-open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // 画面幅が戻ったら閉じる（レイアウト切替の取りこぼし対策）
+            let mq = window.matchMedia('(min-width: 769px)');
+            mq.addEventListener('change', (ev) => {
+                if (ev.matches) {
+                    header.classList.remove('is-open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
+    </script>
 
     <footer class="site-footer">
         <p>&copy; {{ date('Y') }} 勤怠管理</p>

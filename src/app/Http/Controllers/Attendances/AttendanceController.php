@@ -208,7 +208,7 @@ class AttendanceController extends Controller
             return back()->with('auth_error', '退勤の記録に失敗しました。');
         }
 
-        return back()->with('status', 'お疲れ様でした。');
+        return back();
     }
 
     /**
@@ -234,7 +234,7 @@ class AttendanceController extends Controller
             ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
             ->with([
                 'breaks',
-                // ★ 追加：自分の pending だけを一緒に読む（最小カラム）
+                // 自分の pending だけを一緒に読む（最小カラム）
                 'editRequests' => function ($q) use ($user) {
                     $q->where('applicant_id', $user->id)
                         ->where('status', \App\Models\AttendanceEditRequest::STATUS_PENDING)
@@ -275,7 +275,7 @@ class AttendanceController extends Controller
                 $worked   = 0;
             }
 
-            // ★ 追加：承認待ち申請が1件でもあれば、そのIDを拾う
+            // 承認待ち申請が1件でもあれば、そのIDを拾う
             $pendingReqId = $att?->editRequests?->first()?->id;
 
             $days[] = [
@@ -287,7 +287,7 @@ class AttendanceController extends Controller
                 'break_min'      => $breakMin,
                 'work_min'       => $worked,
                 'status'         => $att->status ?? '',
-                'pending_req_id' => $pendingReqId, // ★ ビューで使う
+                'pending_req_id' => $pendingReqId, 
             ];
         }
 
@@ -416,8 +416,9 @@ class AttendanceController extends Controller
             'status'            => \App\Models\AttendanceEditRequest::STATUS_PENDING,
         ]);
 
+        // 成功したら → /my/requests/ へ
         return redirect()
-            ->route('attendance.detail', $request->input('attendance_id'))
+            ->route('my.requests.index')
             ->with('status', '修正申請を送信しました。');
     }
 }
