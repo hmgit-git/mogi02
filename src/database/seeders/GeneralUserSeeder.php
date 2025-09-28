@@ -15,34 +15,26 @@ class GeneralUserSeeder extends Seeder
     {
         $tz = 'Asia/Tokyo';
 
-        // ▼ 日付範囲（例：2025/08/30〜2025/09/05）
+        // 対象期間
         $start = Carbon::create(2025, 8, 30, 0, 0, 0, $tz);
         $end   = Carbon::create(2025, 9, 5,  0, 0, 0, $tz);
 
-        // ▼ 対象ユーザー（増やしたいときは配列に追加）
+        // 一般ユーザー（3名）
         $users = [
-            [
-                'name'  => '一般ユーザー1',
-                'email' => 'user1@example.com',
-                'role'  => 'user',
-                'password' => 'password',
-            ],
-            [
-                'name'  => '一般ユーザー2',
-                'email' => 'user2@example.com',
-                'role'  => 'user',
-                'password' => 'password',
-            ],
+            ['name' => '一般ユーザー1', 'email' => 'user1@example.com', 'role' => 'user', 'password' => 'password'],
+            ['name' => '一般ユーザー2', 'email' => 'user2@example.com', 'role' => 'user', 'password' => 'password'],
+            ['name' => '一般ユーザー3', 'email' => 'user3@example.com', 'role' => 'user', 'password' => 'password'],
         ];
 
-        // ユーザー作成または更新
+        // 作成/更新（認証済みに）
         foreach ($users as &$u) {
             $user = User::updateOrCreate(
                 ['email' => $u['email']],
                 [
-                    'name'     => $u['name'],
-                    'role'     => $u['role'],
-                    'password' => Hash::make($u['password']),
+                    'name'              => $u['name'],
+                    'role'              => $u['role'],
+                    'password'          => Hash::make($u['password']),
+                    'email_verified_at' => now(),
                 ]
             );
             $u['id'] = $user->id;
@@ -51,20 +43,18 @@ class GeneralUserSeeder extends Seeder
 
         // 日付ループ
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-
-            // 土日を除外したいなら下のifを解除
-            // if ($d->isWeekend()) continue;
-
             foreach ($users as $u) {
-                // 勤怠時刻（ランダム微調整したい場合）
-                $in   = $d->copy()->setTime(9, 0);
-                $out  = $d->copy()->setTime(18, 0);
+                // 出退勤（適度にブレさせる）
+                $in  = $d->copy()->setTime(9, 0);
+                $out = $d->copy()->setTime(18, 0);
 
-                // 5〜15分のズレをランダムで付与（任意）
-                $in->addMinutes([0, 5, 10, 15][array_rand([0, 1, 2, 3])]);
-                $out->subMinutes([0, 5, 10, 15][array_rand([0, 1, 2, 3])]);
+                $minsIn  = [0, 5, 10, 15];
+                $minsOut = [0, 5, 10, 15];
 
-                // 勤怠 upsert（ユーザー×日付で1件）
+                $in->addMinutes($minsIn[array_rand($minsIn)]);
+                $out->subMinutes($minsOut[array_rand($minsOut)]);
+
+                // 勤怠 upsert（user_id × work_date で一意）
                 $att = Attendance::updateOrCreate(
                     ['user_id' => $u['id'], 'work_date' => $d->toDateString()],
                     [
@@ -75,19 +65,21 @@ class GeneralUserSeeder extends Seeder
                     ]
                 );
 
-                // 既存の休憩は一旦削除して入れ直し（再実行に強い）
+                // 休憩は入れ直し
                 $att->breaks()->delete();
 
-                // 休憩1（昼休憩 12:00〜13:00）
+                // 昼休憩 12:00〜13:00
                 AttendanceBreak::create([
                     'attendance_id' => $att->id,
                     'start_at'      => $d->copy()->setTime(12, 0),
                     'end_at'        => $d->copy()->setTime(13, 0),
                 ]);
 
-                // 休憩2（午後小休憩 15:00〜15:10〜15:20からランダム）
-                $pmStart = $d->copy()->setTime(15, 0)->addMinutes([0, 5, 10][array_rand([0, 1, 2])]);
-                $pmEnd   = $pmStart->copy()->addMinutes([10, 15, 20][array_rand([0, 1, 2])]);
+                // 午後小休憩（15:00±数分、10〜20分）
+                $pmStartCandidates = [0, 5, 10];   // 分
+                $pmDurations       = [10, 15, 20]; // 分
+                $pmStart = $d->copy()->setTime(15, 0)->addMinutes($pmStartCandidates[array_rand($pmStartCandidates)]);
+                $pmEnd   = $pmStart->copy()->addMinutes($pmDurations[array_rand($pmDurations)]);
 
                 AttendanceBreak::create([
                     'attendance_id' => $att->id,

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title','申請詳細')
+@section('title','勤怠詳細')
 @section('body_class','theme-user')
 
 @section('css')
@@ -38,7 +38,7 @@ $breakChanges = (is_array($changes['breaks'] ?? null)) ? $changes['breaks'] : []
 @endphp
 
 <div class="att-wrap">
-    <h1 class="section-title">申請詳細</h1>
+    <h1 class="section-title">勤怠詳細</h1>
 
     <table class="att-table">
         <tbody>

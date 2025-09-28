@@ -31,7 +31,6 @@
 
             <div class="actions">
                 <a class="link" href="{{ route('register') }}">会員登録はこちら</a>
-                <a class="link" href="{{ route('password.request') }}">パスワードをお忘れですか？</a>
             </div>
         </form>
     </div>

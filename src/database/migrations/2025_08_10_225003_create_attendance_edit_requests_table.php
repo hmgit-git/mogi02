@@ -17,7 +17,7 @@ class CreateAttendanceEditRequestsTable extends Migration
             $table->id();
             $table->foreignId('attendance_id')->constrained()->cascadeOnDelete();
             $table->foreignId('applicant_id')->constrained('users')->cascadeOnDelete();
-            $table->json('requested_changes'); // 変更差分
+            $table->json('requested_changes');
             $table->text('reason');
             $table->string('status', 20)->default('pending');
             $table->foreignId('reviewed_by')

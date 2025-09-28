@@ -9,12 +9,13 @@
     <h1 class="section-title">スタッフ一覧</h1>
 
     <form method="GET" class="att-filter" action="{{ route('admin.staff.index') }}" role="search" novalidate>
-        <input class="input" type="search" name="q" value="{{ $q }}" placeholder="氏名・メールで検索">
+        <input class="input" type="search" name="q"
+            value="{{ old('q', $q) }}"
+            placeholder="氏名・メールで検索">
         <button class="btn btn-outline" type="submit">検索</button>
     </form>
 
     <table class="att-table">
-        
         <thead>
             <tr>
                 <th>氏名</th>

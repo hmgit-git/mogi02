@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Arr;
+use Carbon\Exceptions\InvalidFormatException;
 
 class StoreAttendanceEditRequest extends FormRequest
 {
@@ -19,7 +20,7 @@ class StoreAttendanceEditRequest extends FormRequest
     {
         return [
             'attendance_id' => ['required', 'exists:attendances,id'],
-            'date'          => ['required', 'date_format:Y-m-d'], // hiddenで送ってる日付
+            'date'          => ['required', 'date_format:Y-m-d'], // hiddenで送ってる日付（YYYY-MM-DD）
 
             // H:i（空OK）を受ける。後で date と合成して比較する
             'clock_in_at'   => ['nullable', 'date_format:H:i'],
@@ -36,11 +37,11 @@ class StoreAttendanceEditRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'reason.required' => '備考を記入してください',
-            'clock_in_at.date_format'  => '出勤時間もしくは退勤時間が不適切な値です',
-            'clock_out_at.date_format' => '出勤時間もしくは退勤時間が不適切な値です',
+            'reason.required'              => '備考を記入してください',
+            'clock_in_at.date_format'      => '出勤時間もしくは退勤時間が不適切な値です',
+            'clock_out_at.date_format'     => '出勤時間もしくは退勤時間が不適切な値です',
             'breaks.*.start_at.date_format' => '休憩時間が不適切な値です',
-            'breaks.*.end_at.date_format'   => '休憩時間が不適切な値です',
+            'breaks.*.end_at.date_format'  => '休憩時間が不適切な値です',
         ];
     }
 
@@ -50,21 +51,33 @@ class StoreAttendanceEditRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $v) {
-            $tz   = 'Asia/Tokyo';
-            $date = $this->input('date'); // YYYY-MM-DD
+            // まず基本ルールでエラーが出ていたら、業務チェックを実行しない（例外対策）
+            if ($v->errors()->isNotEmpty()) {
+                return;
+            }
 
-            // H:i → Carbon（null許容）
-            $toDateTime = function (?string $hi) use ($date, $tz) {
+            $tz   = 'Asia/Tokyo';
+            // 念のため date を Y-m-d に正規化（H:i:s が混じっていても安全にする）
+            $ymd  = Carbon::parse($this->input('date'), $tz)->format('Y-m-d');
+
+            // "H:i" or "H:i:s" を受けるパーサ
+            $toDateTime = function (?string $hi) use ($ymd, $tz) {
                 if (!$hi) return null;
-                return Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $hi, $tz);
+                $hi = trim($hi);
+                $format = preg_match('/^\d{2}:\d{2}:\d{2}$/', $hi) ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+                try {
+                    return Carbon::createFromFormat($format, $ymd . ' ' . $hi, $tz);
+                } catch (InvalidFormatException $e) {
+                    return null; // フォーマット不一致は基本ルールで拾われるのでここでは握りつぶす
+                }
             };
 
             $cin  = $toDateTime($this->input('clock_in_at'));
             $cout = $toDateTime($this->input('clock_out_at'));
 
-            // 1) 出勤 <= 退勤
+            // 1) 出勤 <= 退勤（テスト要件に合わせた文言で clock_in_at にエラー付与）
             if ($cin && $cout && $cin->gt($cout)) {
-                $v->errors()->add('clock_in_out', '出勤時間もしくは退勤時間が不適切な値です');
+                $v->errors()->add('clock_in_at', '出勤時間が不適切な値です');
             }
 
             // 2) 休憩の範囲と順序
@@ -73,38 +86,45 @@ class StoreAttendanceEditRequest extends FormRequest
                 $bs = $toDateTime(Arr::get($b, 'start_at'));
                 $be = $toDateTime(Arr::get($b, 'end_at'));
 
-                // 休憩のどちらか片方だけあってもOK（申請で片方ミス修正したいケース）
+                // どちらも空ならスキップ
                 if (!$bs && !$be) continue;
 
-                // 出勤・退勤の前後チェック（両方そろっている場合のみ厳密チェック）
+                // 出勤前に休憩開始はNG
                 if ($cin && $bs && $bs->lt($cin)) {
                     $v->errors()->add("breaks.$i.start_at", '休憩時間が不適切な値です');
                 }
+
+                // 退勤後に休憩開始はNG
+                if ($cout && $bs && $bs->gt($cout)) {
+                    $v->errors()->add("breaks.$i.start_at", '休憩時間が不適切な値です');
+                }
+
+                // 休憩終了 > 退勤 は NG（要件どおりの文言）
                 if ($cout && $be && $be->gt($cout)) {
-                    // 3) 休憩終了が退勤後
                     $v->errors()->add("breaks.$i.end_at", '休憩時間もしくは退勤時間が不適切な値です');
                 }
 
-                // 開始 <= 終了（両方ある時）
+                // 開始 > 終了 も NG（同文言でまとめる）
                 if ($bs && $be && $bs->gt($be)) {
                     $v->errors()->add("breaks.$i.start_at", '休憩時間もしくは退勤時間が不適切な値です');
                 }
-
-                // 出勤/退勤どちらかが空のときは、ビジネスとして許すなら上記で終了。
-                // 厳密に「出勤/退勤が必須」としたい場合はここで追加チェック。
             }
         });
     }
 
     /**
      * コントローラで使いやすい形に整えるヘルパ
-     * H:i を Y-m-d H:i に合成した文字列を返す
+     * H:i / H:i:s を Y-m-d H:i:s に合成して返す
      */
     public function mergedDateTime(string $hiOrNull): ?string
     {
         if (!$hiOrNull) return null;
         $tz   = 'Asia/Tokyo';
-        $date = $this->input('date');
-        return Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $hiOrNull, $tz)->toDateTimeString();
+        $ymd  = Carbon::parse($this->input('date'), $tz)->format('Y-m-d');
+
+        $hi = trim($hiOrNull);
+        $format = preg_match('/^\d{2}:\d{2}:\d{2}$/', $hi) ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+
+        return Carbon::createFromFormat($format, "$ymd $hi", $tz)->toDateTimeString();
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class Attendance extends Model
 {
@@ -65,5 +66,33 @@ class Attendance extends Model
     public function isFinished(): bool
     {
         return $this->status === 'finished';
+    }
+    
+    public function getBreakMinutesAttribute(): int
+    {
+        return $this->breaks->sum(function ($br) {
+            if (!$br->start_at || !$br->end_at) return 0;
+            return Carbon::parse($br->start_at)->diffInMinutes(Carbon::parse($br->end_at));
+        });
+    }
+
+    public function getWorkMinutesAttribute(): int
+    {
+        if (!$this->clock_in_at || !$this->clock_out_at) return 0;
+        $total = Carbon::parse($this->clock_in_at)->diffInMinutes(Carbon::parse($this->clock_out_at));
+        return max(0, $total - $this->break_minutes);
+    }
+
+    // 表示用 H:MM
+    public function getBreakHmAttribute(): string
+    {
+        $m = $this->break_minutes;
+        return sprintf('%d:%02d', intdiv($m, 60), $m % 60);
+    }
+
+    public function getWorkHmAttribute(): string
+    {
+        $m = $this->work_minutes;
+        return sprintf('%d:%02d', intdiv($m, 60), $m % 60);
     }
 }

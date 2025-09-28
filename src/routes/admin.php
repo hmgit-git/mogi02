@@ -1,35 +1,51 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
-use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\RequestController as AdminRequestController;
 
-// 未ログイン（webガード）向け: 管理者ログイン画面・処理
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login.show');
-    Route::post('/login', [AdminLoginController::class, 'login'])->name('login.perform');
+// 管理者コントローラ
+use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\AdminAttendanceController;
+use App\Http\Controllers\Admin\AdminStaffController;
+use App\Http\Controllers\Admin\AttendanceEditRequestController;
+
+// 未ログイン（adminガード）
+Route::middleware('guest:admin')->group(function () {
+    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login.form');
+    Route::post('/login', [AdminLoginController::class, 'login'])
+        ->middleware('throttle:6,1')
+        ->name('login');
 });
 
-// ログイン済み（webガード）＆ 管理者権限のみ
-Route::middleware(['auth', 'can:admin'])->group(function () {
-    // ダッシュボード（必要なら）
-    Route::get('/dashboard', [AdminAttendanceController::class, 'dashboard'])->name('dashboard');
+// ログイン済み（adminガード）
+Route::middleware('auth:admin')->group(function () {
+    Route::post('/logout', [AdminLoginController::class, 'logout'])->name('logout');
 
-    // 勤怠一覧・詳細
-    Route::get('/attendances', [AdminAttendanceController::class, 'index'])->name('attendances.index');
-    Route::get('/attendances/{id}', [AdminAttendanceController::class, 'show'])->name('attendances.show');
+    // ダッシュボード（任意）
+    Route::get('/dashboard', [AdminAttendanceController::class, 'daily'])->name('dashboard');
 
-    // スタッフ一覧・スタッフ別勤怠一覧
-    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
-    Route::get('/users/{user}/attendances', [AdminAttendanceController::class, 'userAttendances'])->name('users.attendances');
+    // 日次一覧（従来URI）＆ PG08 エイリアス —— どちらも daily に集約
+    Route::get('/attendances', [AdminAttendanceController::class, 'daily'])->name('attendances.daily');
+    Route::get('/attendance/list', [AdminAttendanceController::class, 'daily'])->name('attendance.list.pg08');
 
-    // 申請一覧・申請詳細（承認画面）
-    Route::get('/requests', [AdminRequestController::class, 'index'])->name('requests.index');
-    Route::get('/requests/{id}', [AdminRequestController::class, 'show'])->name('requests.show');
+    // 勤怠詳細＆更新（テストで利用：admin.attendances.show / update）
+    Route::get('/attendances/{id}', [AdminAttendanceController::class, 'show'])
+        ->whereNumber('id')->name('attendances.show');
+    Route::put('/attendances/{id}', [AdminAttendanceController::class, 'update'])
+        ->whereNumber('id')->name('attendances.update');
 
-    // 承認 / 却下（処理系）
-    Route::post('/requests/{id}/approve', [AdminRequestController::class, 'approve'])->name('requests.approve');
-    Route::post('/requests/{id}/reject',  [AdminRequestController::class, 'reject'])->name('requests.reject');
+    // スタッフ一覧＆月次（テストで利用：admin.staff.index / admin.staff.attendances）
+    Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
+    Route::get('/staff/{user}/attendances', [AdminStaffController::class, 'monthly'])
+        ->whereNumber('user')->name('staff.attendances');
+    Route::get('/staff/{user}/attendances/csv', [AdminStaffController::class, 'exportCsv'])
+        ->whereNumber('user')->name('staff.attendances.csv');
+
+    // 申請一覧／詳細／承認（テストで利用：admin.requests.index / show / approve）
+    Route::get('/requests', [AttendanceEditRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests/{id}', [AttendanceEditRequestController::class, 'show'])
+        ->whereNumber('id')->name('requests.show');
+    Route::post('/requests/{id}/approve', [AttendanceEditRequestController::class, 'approve'])
+        ->whereNumber('id')->name('requests.approve');
+    Route::post('/requests/{id}/reject', [AttendanceEditRequestController::class, 'reject'])
+        ->whereNumber('id')->name('requests.reject');
 });
